@@ -1,0 +1,24 @@
+﻿l_english:
+ # LOAD CANARY. The on-screen pause banner is PAUSED_BY_PLAYER, NOT PAUSED --
+ # `PAUSED` exists in core_l_english.yml but is not what the HUD draws, so
+ # overriding it produces a permanent false negative. Verified 2026-08-12.
+ PAUSED_BY_PLAYER:0 "BC SPIKE LOADED"
+ bc_spike_toast_title:0 "SPIKE: [bc_commander.GetFirstName] seizes the moment"
+ bc_spike_momentum_major:0 "The Line Surges Forward"
+ bc_spike_momentum_major_desc:0 "Probe modifier. +20 advantage."
+ bc_spike_faltering_major:0 "The Banner Wavers"
+ bc_spike_faltering_major_desc:0 "Probe modifier. -20 advantage."
+ bc_spike_advantage_modifier:0 "SPIKE Advantage Probe"
+ bc_spike_advantage_modifier_desc:0 "Console fast-path probe. +50 advantage."
+ bc_spike_opinion_modifier:0 "Fought at my side"
+ rule_bc_spike_frequency:0 "SPIKE Chronicle Frequency"
+ setting_bc_spike_frequency_low:0 "Low"
+ setting_bc_spike_frequency_low_desc:0 "Probe option."
+ setting_bc_spike_frequency_default:0 "Default"
+ setting_bc_spike_frequency_default_desc:0 "Probe option."
+ setting_bc_spike_frequency_high:0 "High"
+ setting_bc_spike_frequency_high_desc:0 "Probe option."
+ bc_spike.0001.t:0 "SPIKE: A Moment in the Battle"
+ bc_spike.0001.desc:0 "The probe event fired. If you can read this, a combat phase event handed off to a real pop-up with choices, which is the interactive path the Chronicles design depends on."
+ bc_spike.0001.a:0 "Press the advantage."
+ bc_spike.0001.b:0 "Hold the line."

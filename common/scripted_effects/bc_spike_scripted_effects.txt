@@ -1,0 +1,26 @@
+﻿# BC Spike - scripted effects
+
+# Probe 7: does a parameterised scripted effect work from a phase event?
+# Chronicles routes every momentum application through one effect like this so
+# tuning happens in exactly one place.
+bc_spike_apply_momentum_effect = {
+	add_character_modifier = {
+		modifier = $MODIFIER$
+		days = $DAYS$
+	}
+	debug_log = "BC_SPIKE: P7 scripted effect applied $MODIFIER$"
+}
+
+# Probe 12 helper: strip everything this mod applied.
+bc_spike_cleanup_effect = {
+	if = {
+		limit = { has_character_modifier = bc_spike_momentum_major }
+		remove_character_modifier = bc_spike_momentum_major
+		debug_log = "BC_SPIKE: P12 cleanup removed momentum"
+	}
+	if = {
+		limit = { has_character_modifier = bc_spike_faltering_major }
+		remove_character_modifier = bc_spike_faltering_major
+		debug_log = "BC_SPIKE: P12 cleanup removed faltering"
+	}
+}

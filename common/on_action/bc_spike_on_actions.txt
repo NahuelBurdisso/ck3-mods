@@ -1,0 +1,22 @@
+﻿# Probe 12: can momentum be cleaned up when the battle ends?
+#
+# DO NOT use `effect = { }` here. on_action `effect` blocks do NOT merge across
+# files -- the engine keeps exactly one and logs
+#   [E][jomini_onaction.cpp:161]: There is more than one 'effect' defined using most recent
+# and "most recent" is decided by file read order within common/on_action, which
+# is alphabetical, NOT playset load order. `bc_spike_on_actions.txt` sorts before
+# `combat_on_actions.txt`, so our effect was silently discarded even though the
+# mod loads last. Verified in game 2026-08-12.
+#
+# `events = { }` is an additive list and is the hook vanilla itself uses here.
+on_combat_end_winner = {
+	events = {
+		bc_spike.0002
+	}
+}
+
+on_combat_end_loser = {
+	events = {
+		bc_spike.0002
+	}
+}

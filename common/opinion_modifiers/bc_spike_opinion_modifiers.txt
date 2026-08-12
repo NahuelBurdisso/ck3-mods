@@ -1,0 +1,7 @@
+﻿# Probe 11: no vanilla or AGOT phase event applies opinion. Chronicles wants
+# battles to leave grudges and bonds, so this needs to work from a knight event.
+bc_spike_opinion_modifier = {
+	monthly_change = 0.1
+	decaying = yes
+	stacking = yes
+}
