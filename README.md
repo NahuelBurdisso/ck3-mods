@@ -10,15 +10,22 @@ interact with anything here and keeps its "always last" slot.
 
 ## Rebuilding — do not hand-merge
 
-    python tools/_mergepatch.py            # report only
-    python tools/_mergepatch.py --write    # regenerate all five files
+    python tools/_mergepatch.py            # report only, exit 0 == all targets pass
+    python tools/_mergepatch.py --write    # regenerate all eight files
     python tools/ck3.py validate agot_conflict_merge
 
 `tools/_mergepatch.py` reads the live `dlc_load.json`, resolves each target's owners in
 load order, and runs a real 3-way merge (`git merge-file`, base = first owner) once per
 owning mod. Genuine overlaps auto-resolve to the later-loading mod, i.e. identically to
 what the game does today. It then checks, per file: no conflict markers, brace delta equal
-to the base's, and **every owner's unique-vs-base lines present in the output**.
+to the base's, no duplicated top-level key (`.txt` only), and **every owner's
+unique-vs-base lines present in the output**. Nothing is written unless its checks pass.
+
+**This patch is never an owner of its own targets.** It is filtered out of the owners list
+by path. Feeding the last build's output back in is harmless only while the merge is
+idempotent; the moment a new owning mod appears it duplicates the shared hunks and, because
+the patch loads last, its stale copy wins the overlaps and drops the new mod's lines. That
+is exactly what happened when A Time for Wolves Fix was added — 21 of its lines vanished.
 
 **A merge pins its inputs' content at build time. Re-run after ANY owning mod updates.**
 The 2026-08-12 hand-merges had gone stale exactly this way — four of the five owning mods
@@ -26,15 +33,40 @@ updated between 09-08 and 09-14.
 
 ## What is merged, and against what
 
-Rebuilt 2026-09-14 from the live 81-mod playset. All five: 0 conflicts, 0 lines lost.
+Rebuilt 2026-09-14 from the live 87-mod playset. All eight: 0 conflicts, 0 lines lost.
+Indices below are that playset's.
 
 | File | Owners, in load order | Recovered by the merge |
 |---|---|---|
-| `common/scripted_effects/07_dlc_ep3_scripted_effects.txt` | AGOT → House Founders [12] → More Dragon Eggs [17] → Seasons [22] | HF's 339-line adventurer-title rework (it comments AGOT's `adventurer_name_001..` out behind `# AGOTHF Disabled` and substitutes house-founder naming) **and** MDE's `# MDE Modified` block (returns the head dragonkeeper to court and re-pits living dragons at the new capital on title transfer). Both were dead: Seasons won the file. Seasons' own `#SEASONS MODIFIED` winter-modifier lists are kept |
-| `gui/hud.gui` | AGOT → More Dragon Eggs [17] → Battlefield Duel + [76] | MDE's `bottom_left_dragon_portrait = {}` widget — the HUD dragon portrait, lost to Battlefield Duel +'s 116-line reputation-stack rewrite |
-| `common/coat_of_arms/template_lists/color_lists.txt` | AGOT → AGOT+ [2] → House Founders [12] | AGOT+'s 38 unique lines (incl. the `valyria_dark/medium/light` named-colour rewrite), lost to House Founders |
-| `common/on_action/child_birth_on_actions.txt` | AGOT → House Founders [12] → Seasons [22] | HF's 4 unique lines, lost to Seasons |
-| `common/bookmarks/challenge_characters/00_challenge_characters.txt` | AGOT → Additional Models & Special Buildings [6] → Bookmarked [19] | AMSB's 47 unique lines, lost to Bookmarked. 28 top-level entries out, no duplicate keys — Bookmarked no longer ships the `egg1`–`egg4` entries the 2026-08-12 note said had to be dropped by hand |
+| `common/scripted_effects/07_dlc_ep3_scripted_effects.txt` | AGOT [1] → House Founders [14] → More Dragon Eggs [19] → Seasons [25] | HF's 339-line adventurer-title rework (it comments AGOT's `adventurer_name_001..` out behind `# AGOTHF Disabled` and substitutes house-founder naming) **and** MDE's `# MDE Modified` block (returns the head dragonkeeper to court and re-pits living dragons at the new capital on title transfer). Both were dead: Seasons won the file. Seasons' own `#SEASONS MODIFIED` winter-modifier lists are kept |
+| `gui/hud.gui` | AGOT [1] → More Dragon Eggs [19] → Battlefield Duel + [80] | MDE's `bottom_left_dragon_portrait = {}` widget — the HUD dragon portrait, lost to Battlefield Duel +'s 116-line reputation-stack rewrite |
+| `common/coat_of_arms/template_lists/color_lists.txt` | AGOT [1] → AGOT+ [4] → House Founders [14] | AGOT+'s 38 unique lines (incl. the `valyria_dark/medium/light` named-colour rewrite), lost to House Founders |
+| `common/on_action/child_birth_on_actions.txt` | AGOT [1] → House Founders [14] → Seasons [25] | HF's 4 unique lines, lost to Seasons |
+| `common/bookmarks/challenge_characters/00_challenge_characters.txt` | AGOT [1] → Additional Models & Special Buildings [8] → Bookmarked [21] → A Time for Wolves Fix [22] | **`--union`, see below.** The 16 shared keys are exactly AGOT's, so all three are independent extensions of the base: AMSB +7, Bookmarked +5 (`egg1`–`egg5`, its "Main Mod Graveyard" Aegons), ATfW +12. 40 top-level entries out, no duplicate keys. ATfW loads last and would otherwise take the whole end-of-file region |
+| `gfx/interface/illustrations/scripted_illustrations/ingame.txt` | AGOT [1] → Fire and Blood [3] → *(AGOT+ [4], AMSB [8] — superseded)* → Additional Models / AGOT+ Compatch [9] | F&B's 6 lines (the `fab_storms_end_throneroom.dds` scene). AGOT+ and AMSB are **not merged directly**: the compatch at [9] already is AGOT+ ∪ AMSB for this file (456 + 9 = 465 unique-vs-base exactly), so merging all three triple-counted and produced 38 657 lines from a 20 369-line base |
+| `history/titles/agot_d_kingsguard.txt` | AGOT [1] → Bookmarked [21] → A Time for Wolves Fix [22] | Bookmarked's `7998.1.2` holder block, lost to ATfW's Brienne-of-Tarth entry |
+| `gui/custom_gui/agot_kingsguard.gui` | AGOT [1] → Fire and Blood [3] | **`RESTORE`, not a merge.** Ships AGOT's current 877-line file verbatim. See below |
+
+## `RESTORE` — when a later mod ships a stale snapshot
+
+Fire and Blood [3] ships a 508-line `agot_kingsguard.gui`. AGOT's is 877. F&B's only
+line not in AGOT's is `blockoverride "replace_councillor"` — AGOT moved that button into
+a `block "replace_councillor"` default inside the councillor template and dropped the 7
+redundant per-slot overrides F&B still carries. The file contains **zero** `fab_`/F&B
+tokens: it is an accidental leftover, not content.
+
+Merging is the wrong tool here. F&B's diff-vs-base *is* a revert, so a 3-way merge would
+delete 187 of AGOT's lines. `RESTORE` ships the base verbatim and asserts the stale owner
+adds nothing outside a declared allowlist — if F&B ever puts real content in that file the
+check fails and the entry must be removed and merged properly.
+
+## `--union` — when every owner only appends
+
+`00_challenge_characters.txt`'s three non-base owners each append new top-level entries at
+the end of the file. That is one overlapping hunk, and `--theirs` gives it entirely to the
+latest loader. `--union` keeps every side. It is only safe because of the
+duplicate-top-level-key check: if two owners edited the *same* key, union would emit it
+twice, CK3 would keep one, and the check fails the build.
 
 ## BOM
 
@@ -55,8 +87,11 @@ AGOT CBO Base → [other mod] → [other mod] AGOT Compatibility, and [other mod
 Compatibility is a purpose-built patch that already resolves it; a trunk shipped here
 would clobber it. It is also the file behind the DireWolves↔CBO load crash.
 
-## Brace-balance caveat
+## Brace balance — count real braces only
 
-AGOT Bookmarked comments out `# 7999.4.1 = {` lines, so its files are legitimately
-`{`-heavy. A merge inheriting the same offset is correct, not broken — which is why the
-rebuild compares the merge's brace delta to the **base's**, not to zero.
+The brace check strips `#` line comments first (but not a `#` inside a double-quoted
+string — CK3 format codes look like `default_format = "#high;italic"`). Without that,
+commented-out script makes every file look unbalanced: AGOT's `ingame.txt` reads `+102`
+raw and `+0` for real, and AGOT Bookmarked's commented-out `# 7999.4.1 = {` lines were the
+classic false hit. With comments stripped every owner and every merge is `+0`, so the
+check is now a genuine assertion rather than "matches the base's arbitrary offset".
