@@ -1040,4 +1040,71 @@
 		10 = agot_turquoise
 		10 = agot_violet
 	}
+
+	#Special for ibb
+
+	desat_dark_high_ibb_a = {
+		10 = agot_burgundy
+		10 = agot_mud_red
+		10 = agot_brown_dark
+	}
+
+	desat_dark_high_ibb_b = {
+		10 = agot_charcoal
+		10 = agot_black_light
+		10 = agot_grey_dark
+		10 = agot_smoke
+	}
+
+	desat_light_high_ibb_a = {
+		10 = agot_gold
+		10 = agot_carnation
+		10 = agot_sand
+		10 = agot_green_grey
+		10 = agot_olive
+		10 = agot_oak
+	}
+
+	desat_light_high_ibb_b = {
+		10 = agot_smoke
+		10 = agot_silver
+		10 = agot_grey_light
+		10 = agot_cream
+		10 = agot_grey
+		10 = agot_bone
+		10 = agot_white
+	}
+
+	norm_dark_high_ibb_a = {
+		10 = agot_sand
+		10 = agot_yellow
+		10 = agot_yellow_light
+		10 = agot_copper
+		10 = agot_carnation
+		10 = agot_lilac
+	}
+
+	norm_dark_high_ibb_b = {
+		10 = agot_white
+		10 = agot_grey_light
+		10 = agot_cream
+		10 = agot_silver
+	}
+
+	norm_light_high_ibb_a = {
+		10 = agot_sand
+		10 = agot_yellow
+		10 = agot_yellow_light
+		10 = agot_copper
+		10 = agot_carnation
+		10 = agot_blue_sky
+		10 = agot_green_light
+	}
+
+	norm_light_high_ibb_b = {
+		10 = agot_white
+		10 = agot_grey_light
+		10 = agot_cream
+		10 = agot_silver
+	}
 }
