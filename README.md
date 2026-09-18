@@ -11,7 +11,9 @@ interact with anything here and keeps its "always last" slot.
 ## Rebuilding — do not hand-merge
 
     python tools/_mergepatch.py            # report only, exit 0 == all targets pass
-    python tools/_mergepatch.py --write    # regenerate all eight files
+    python tools/_mergepatch.py --write    # regenerate all eight whole-file merges
+    python tools/_ishumanfix.py            # the key-level merge -- see "Key-level" below
+    python tools/_ishumanfix.py --write
     python tools/ck3.py validate agot_conflict_merge
 
 `tools/_mergepatch.py` reads the live `dlc_load.json`, resolves each target's owners in
@@ -46,6 +48,33 @@ Indices below are that playset's.
 | `gfx/interface/illustrations/scripted_illustrations/ingame.txt` | AGOT [1] → Fire and Blood [3] → *(AGOT+ [4], AMSB [8] — superseded)* → Additional Models / AGOT+ Compatch [9] | F&B's 6 lines (the `fab_storms_end_throneroom.dds` scene). AGOT+ and AMSB are **not merged directly**: the compatch at [9] already is AGOT+ ∪ AMSB for this file (456 + 9 = 465 unique-vs-base exactly), so merging all three triple-counted and produced 38 657 lines from a 20 369-line base |
 | `history/titles/agot_d_kingsguard.txt` | AGOT [1] → Bookmarked [21] → A Time for Wolves Fix [22] | Bookmarked's `7998.1.2` holder block, lost to ATfW's Brienne-of-Tarth entry |
 | `gui/custom_gui/agot_kingsguard.gui` | AGOT [1] → Fire and Blood [3] | **`RESTORE`, not a merge.** Ships AGOT's current 877-line file verbatim. See below |
+
+## Key-level merges — a collision with no file collision
+
+Built by **`tools/_ishumanfix.py`**, not `_mergepatch.py`, and it is a different failure
+mode. Every target above is a file several mods ship at the *same path*. This one is the
+opposite: the owners ship **differently named files**, so nothing is overwritten and a
+collision scan by filename reports zero — yet CK3 keeps only the **last definition of a
+duplicate top-level key**, so the last-loading owner still silently wins and the others'
+edits die. Filename collisions are therefore a lower bound on conflicts; duplicate
+definition keys have to be diffed separately.
+
+| Key | Defined by | Recovered |
+|---|---|---|
+| `is_human` | AGOT [1] `00_agot_character_triggers.txt` → Great Councils [5] `zzz_Great_Councils_replaced_triggers.txt` → DireWolves [6] `dw_direwolf_character_triggers.txt` | Both single-line additions. GC's `NOT = { has_character_flag = zzz_great_councils_disable }` and DireWolves' `NOT = { has_trait = direwolf }` are each built on AGOT's 20-line base and neither contains the other, so whichever loads last erases the other's. Losing the DireWolves line makes **direwolves count as human**; losing GC's kills its per-character opt-out. Output 22 lines, 0 conflicts |
+
+Shipped at `common/scripted_triggers/zzz_merge_is_human.txt`. The builder **discovers its
+owners** — it scans every enabled mod's `common/scripted_triggers/` for a top-level
+`is_human`, so a new mod defining it is picked up by re-running rather than by editing a
+list. Same guarantees as `_mergepatch.py`: base is the first owner in load order, real
+`git merge-file` 3-way, and it refuses to write unless there are no conflict markers, the
+brace delta is 0, every owner's unique-vs-base line is in the output, and the result
+defines **exactly one** top-level key. Extracting a block counts braces with comments
+stripped, or a commented-out `}` would end it early.
+
+This also means Great Councils' load position no longer matters for `is_human`; it sits at
+[5] (before DireWolves) as belt-and-braces, so even with this patch disabled the direwolf
+line survives and only GC's opt-out flag is lost.
 
 ## `RESTORE` — when a later mod ships a stale snapshot
 
