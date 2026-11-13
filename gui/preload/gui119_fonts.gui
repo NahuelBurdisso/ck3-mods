@@ -1,0 +1,9 @@
+### gui119 - GUI 1.19 Patch
+### AGOT More Dragon Eggs' dragonpit viewer asks for a Font_Size_Huge template, which CK3 1.19 does not define (it stops at Font_Size_Big). Continues the vanilla progression 13 / 15 / 18 / 23.
+### Source: vanilla gui/preload/fonts.gui (CK3 1.19.0.6). Loads after the offending mod.
+
+template Font_Size_Huge
+{
+	fontsize = 28
+	size = { 0 40 }
+}

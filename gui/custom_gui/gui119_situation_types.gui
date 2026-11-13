@@ -1,0 +1,69 @@
+### gui119 - GUI 1.19 Patch
+### AGOT: Seasons of Ice and Fire replaces gui/window_the_great_steppe.gui with an older copy that no longer declares these two types, so every vanilla file that uses them (cooltip, dynastic cycle, silk road, situation sub region) errors out. Re-declared here verbatim, in a file of our own, so nothing is replaced.
+### Source: vanilla gui/window_the_great_steppe.gui (CK3 1.19.0.6). Loads after the offending mod.
+
+types Gui119SituationTypes
+{
+	type icon_situation_phase_effect_item = icon {
+		datacontext = "[GetPlayer]"
+
+		icon = {
+			parentanchor = center
+			size = { 50 50 }
+			texture = "gfx/interface/icons/struggle_banners/icon_background_dark.dds"
+		}
+
+		proportional_icon = {
+			size = { 75% 75% }
+			position = { 0 0 }
+			parentanchor = center
+			alwaystransparent = yes
+			texture = "[SituationModifierNamedSet.GetIcon]"
+		}
+
+		tooltipwidget = {
+			using = situation_modifier_named_set_tooltip
+		}
+	}
+
+	type icon_situation_phase_effect_participant_group_item = icon {
+		datacontext = "[GetPlayer]"
+
+		### Selected with double outer blue ring
+		highlight_icon = {
+			visible = "[ObjectsEqual( SituationSubRegion.GetCharacterParticipantGroup( Character.Self ).GetName, SituationParticipantGroupType.GetName)]"
+			size = { 58 58 }
+			parentanchor = center
+
+			texture = "gfx/interface/icons/struggle_banners/icon_background_blue_frame.dds"
+		}
+
+		### Blue ring outline
+		icon = {
+			size = { 52 52 }
+			parentanchor = center
+
+			texture = "gfx/interface/icons/struggle_banners/icon_background_blue_frame.dds"
+		}
+
+		icon_flat_standard = {
+			visible = "[Situation.GetType.UseSituationPhaseFlatIcons]"
+			size = { 35 35 }
+			parentanchor = center
+
+			texture = "[SituationParticipantGroupType.GetIcon]"
+		}
+
+		icon = {
+			visible = "[Not( Situation.GetType.UseSituationPhaseFlatIcons )]"
+			size = { 40 40 }
+			parentanchor = center
+
+			texture = "[SituationParticipantGroupType.GetIcon]"
+		}
+
+		tooltipwidget = {
+			using = situation_participant_group_type_phase_effects_tooltip
+		}
+	}
+}

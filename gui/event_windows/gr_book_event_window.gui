@@ -1,0 +1,1632 @@
+### gui119 - GUI 1.19 Patch
+### Grand Remembrance 1.10.0 shows the folio portrait twice, switching on
+### ShouldStylizeDeadPortrait( Character.Self ) - the CK3 1.20 'Stylize Deceased
+### Characters' setting. 1.19.0.6 has no such function, both visible checks fail to
+### parse and both portraits draw on top of each other. Here the plain portrait is
+### always shown and the painted one never. Nothing else differs from GR's file.
+
+gr_book_event_window = {
+	name = "gr_book_event_window"
+}
+
+types GrBookWindowTypes {
+	type gr_book_event_window = window {
+
+		parentanchor = center
+		widgetanchor = center
+		allow_outside = yes
+
+		# 1540 x 867 preserves the source art's 1.777 aspect (1672 x 941).
+		# Page rectangles below are that art measured, scaled by 0.9211:
+		#   left  page  x 274..715   y 60..773
+		#   right page  x 812..1265  y 58..775
+		# Everything on a page is ABSOLUTELY positioned. A vbox is wrong here:
+		# a hidden widget still reserves its layout space, so the absent
+		# portrait pushed the option grid clean out the bottom of the window.
+		size = { 1540 867 }
+
+		layer = events
+
+		datacontext = "[EventWindow.AccessEventWindowData]"
+
+		using = Event_Window_Debug_EventTools
+		blockoverride "is_event_on_top" {
+			enabled = "[EventWindow.IsOnTop]"
+		}
+		blockoverride "is_event_on_top_close" {
+			trigger_when = "[Not(EventWindow.IsOnTop)]"
+		}
+
+		block "transition" {
+			alpha = 0
+
+			state = {
+				name = show
+				trigger_on_create = yes
+				using = Animation_FadeIn_Standard
+				duration = 0.7
+
+				start_sound = {
+					soundeffect = "event:/SFX/Events/Panels/sfx_event_panel_letter"
+					soundparam = {
+						name = StateChange
+						value = 1
+					}
+				}
+			}
+
+			state = {
+				name = _hide
+				using = Animation_FadeOut_Standard
+			}
+		}
+
+		event_window_dimmer_widget = {}
+
+		################################################################
+		# LAYER 1 - the book. Drawn first so everything sits on top of it.
+		# alwaystransparent so it never eats a click meant for a button.
+		################################################################
+		icon = {
+			name = "gr_book_frame"
+			size = { 100% 100% }
+			texture = "gfx/interface/window_gr_chronicle/gr_book_frame.dds"
+			alwaystransparent = yes
+		}
+
+		################################################################
+		# LAYER 1.5 - ILLUMINATED UNDERLAYS.
+		# These MUST sit here, immediately after the book and before every
+		# content widget. Declaration order is z-order: when they were declared
+		# further down they painted over the portrait and the arms, which is
+		# what produced the streaks across the face and made the tree look
+		# colourless (it was being seen against a dark portrait, not parchment).
+		################################################################
+
+
+		# --- static underlays: cover pages and the folio's portrait page ---
+		icon = {
+			name = "gr_wm_cover_left"
+			visible = "[Not(EventWindowData.HasPortraitCharacter('left_portrait'))]"
+			# Hard into the page's bottom-LEFT corner. The texture is now cropped
+			# to its content (the source carried 226px of transparent padding on
+			# its right, which was holding the figure off the corner), so the
+			# widget box IS the figure. Page runs x 274..715, y 60..773; this
+			# sits 6px off the left edge and 8px off the foot.
+			position = { 280 165 }
+			size = { 316 600 }
+			texture = "gfx/interface/window_gr_chronicle/gr_wm_cover_left.dds"
+			alpha = 0.50
+			alwaystransparent = yes
+		}
+
+
+		icon = {
+			name = "gr_wm_cover_right"
+			visible = "[Not(EventWindowData.HasPortraitCharacter('left_portrait'))]"
+			# Hard into the page's bottom-RIGHT corner, mirroring the left page.
+			# Source carried 169px of transparent padding on its left; cropped.
+			# Page runs x 812..1265, y 58..775. Right edge lands on 1257, foot
+			# on 767, so it clears the deckle by 8px on both.
+			position = { 926 167 }
+			size = { 331 600 }
+			texture = "gfx/interface/window_gr_chronicle/gr_wm_cover_right.dds"
+			alpha = 0.50
+			alwaystransparent = yes
+		}
+
+
+		icon = {
+			name = "gr_wm_folio_left"
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			position = { 286 60 }
+			size = { 416 713 }
+			texture = "gfx/interface/window_gr_chronicle/gr_wm_folio_left.dds"
+			alpha = 0.50
+			alwaystransparent = yes
+		}
+
+		widget = {
+			name = "gr_folio_watermark_layer"
+			# Parent gate. Everything inside is folio-only, so the cover cannot
+			# show the stack even if gr_wm_id is missing and the per-icon tests
+			# fail open. CK3 treats a FAILED visible expression as visible, so a
+			# reliable parent condition is the only real protection.
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			position = { 0 0 }
+			size = { 100% 100% }
+			alwaystransparent = yes
+
+			################################################################
+			# FOLIO WATERMARK - one icon per variant.
+			#
+			# CK3 will not interpolate a data function into a texture path (tested
+			# 2026-08-19: it opened a file literally named "[GetPlayer...]" and
+			# logged VFSOpen). Texture paths must be literals, so each of the 76
+			# variants needs its own icon gated on gr_wm_id. Verbose, but only one
+			# is ever visible and adding the AGOT / Elder Scrolls sets is just more
+			# entries in the same generated block.
+			################################################################
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_01_coptic_grape_vine_knot' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_01_coptic_grape_vine_knot.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_02_coptic_geometric_rosettes' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_02_coptic_geometric_rosettes.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_03_nubian_lotus_interlace' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_03_nubian_lotus_interlace.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_04_ethiopian_harag_interlace' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_04_ethiopian_harag_interlace.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_05_ethiopian_braided_rosettes' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_05_ethiopian_braided_rosettes.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_06_maghrebi_geometric_rosettes' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_06_maghrebi_geometric_rosettes.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_07_almoravid_almohad_palmette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_07_almoravid_almohad_palmette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_08_marinid_geometric_medallions' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_08_marinid_geometric_medallions.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_09_mamluk_egyptian_medallion_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_09_mamluk_egyptian_medallion_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_10_timbuktu_sahel_penwork' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_10_timbuktu_sahel_penwork.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_11_sahelian_binding_tooling' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_11_sahelian_binding_tooling.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'african_12_swahili_coast_vegetal_geometry' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/african_12_swahili_coast_vegetal_geometry.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_01_tang_dunhuang_cloud_lotus' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_01_tang_dunhuang_cloud_lotus.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_02_song_cloud_peony_scroll' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_02_song_cloud_peony_scroll.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_03_heian_karakusa_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_03_heian_karakusa_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_04_kamakura_lotus_karakusa' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_04_kamakura_lotus_karakusa.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_05_goryeo_lotus_scroll' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_05_goryeo_lotus_scroll.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_06_tibetan_lotus_cloud_rinceau' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_06_tibetan_lotus_cloud_rinceau.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_07_khmer_flame_lotus_rinceau' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_07_khmer_flame_lotus_rinceau.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'east_asian_08_balinese_javanese_patra_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/east_asian_08_balinese_javanese_patra_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_01_early_insular_interlace' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_01_early_insular_interlace.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_02_insular_bird_knotwork' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_02_insular_bird_knotwork.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_03_carolingian_acanthus' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_03_carolingian_acanthus.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_04_ottonian_palmette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_04_ottonian_palmette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_05_english_gothic_penwork' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_05_english_gothic_penwork.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_06_flemish_floral_penwork' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_06_flemish_floral_penwork.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_07_reichenau_ottonian_interlace' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_07_reichenau_ottonian_interlace.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_08_salzburg_romanesque_foliage' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_08_salzburg_romanesque_foliage.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_09_swabian_romanesque_beast_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_09_swabian_romanesque_beast_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_10_rhineland_gothic_penwork' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_10_rhineland_gothic_penwork.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_11_swiss_alpine_foliage' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_11_swiss_alpine_foliage.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'germanic_12_danube_gothic_thistle_acanthus' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/germanic_12_danube_gothic_thistle_acanthus.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_01_byzantine_jeweled_palmette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_01_byzantine_jeweled_palmette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_02_byzantine_heart_palmette_rinceau' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_02_byzantine_heart_palmette_rinceau.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_03_georgian_braided_grape_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_03_georgian_braided_grape_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_04_armenian_pomegranate_interlace' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_04_armenian_pomegranate_interlace.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_05_hebrew_carpet_page_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_05_hebrew_carpet_page_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_06_west_syriac_floral_roundels' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_06_west_syriac_floral_roundels.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_07_abbasid_samarra_palmette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_07_abbasid_samarra_palmette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'semitic_iranian_08_ilkhanid_persian_lotus_rinceau' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/semitic_iranian_08_ilkhanid_persian_lotus_rinceau.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_01_prague_bohemian_ivy_medallion' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_01_prague_bohemian_ivy_medallion.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_02_bohemian_acanthus_roundel' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_02_bohemian_acanthus_roundel.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_03_moravian_red_blue_penwork' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_03_moravian_red_blue_penwork.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_04_polish_romanesque_palmette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_04_polish_romanesque_palmette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_05_polish_gothic_floral_filigree' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_05_polish_gothic_floral_filigree.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_06_kievan_rus_teratological_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_06_kievan_rus_teratological_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_07_novgorod_penwork_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_07_novgorod_penwork_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_08_bulgarian_palmette_lotus' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_08_bulgarian_palmette_lotus.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_09_serbian_braided_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_09_serbian_braided_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_10_moldavian_romanian_floral_headpiece' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_10_moldavian_romanian_floral_headpiece.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_11_muscovite_floral_interlace' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_11_muscovite_floral_interlace.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'slavic_baltic_12_ruthenian_penwork_knots' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/slavic_baltic_12_ruthenian_penwork_knots.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_01_nepalese_palm_leaf_lotus_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_01_nepalese_palm_leaf_lotus_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_02_pala_lotus_palmette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_02_pala_lotus_palmette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_03_sri_lankan_lotus_scroll' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_03_sri_lankan_lotus_scroll.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_04_gupta_lotus_medallions' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_04_gupta_lotus_medallions.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_05_kashmiri_birch_bark_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_05_kashmiri_birch_bark_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_06_western_indian_jain_floral_geometry' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_06_western_indian_jain_floral_geometry.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_07_deccan_palm_leaf_scroll' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_07_deccan_palm_leaf_scroll.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'south_asian_08_odisha_palm_leaf_floral_geometry' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/south_asian_08_odisha_palm_leaf_floral_geometry.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_01_hungarian_angevin_vine_medallion' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_01_hungarian_angevin_vine_medallion.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_02_scythian_sarmatian_animal_scroll' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_02_scythian_sarmatian_animal_scroll.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_03_sogdian_silk_road_palmette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_03_sogdian_silk_road_palmette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_04_early_turkic_braided_lozenges' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_04_early_turkic_braided_lozenges.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_05_uyghur_turfan_lotus_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_05_uyghur_turfan_lotus_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_06_khazar_volga_bulgar_rosettes' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_06_khazar_volga_bulgar_rosettes.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_07_cuman_kipchak_hooked_scroll' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_07_cuman_kipchak_hooked_scroll.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'steppe_08_mongol_yuan_cloud_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/steppe_08_mongol_yuan_cloud_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_01_romanesque_inhabited_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_01_romanesque_inhabited_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_02_romanesque_quatrefoil_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_02_romanesque_quatrefoil_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_03_cistercian_penwork_rosette' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_03_cistercian_penwork_rosette.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_04_high_gothic_barbed_quatrefoil' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_04_high_gothic_barbed_quatrefoil.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_05_french_gothic_ivy_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_05_french_gothic_ivy_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_06_late_gothic_flowering_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_06_late_gothic_flowering_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_07_balkan_rosette_vine' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_07_balkan_rosette_vine.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'unknown_08_pacific_spiral_wave_fern' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/unknown_08_pacific_spiral_wave_fern.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+
+			# --- submod sets (AGOT, EK2). Their flags are only ever set by the
+			# submods' gr_submod_watermark_effect overrides, so these never show
+			# in base-only play. Textures ship in BASE because hidden widgets
+			# still load their texture, and a base-only install must not error.
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_01' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_01.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_02' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_02.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_03' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_03.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_04' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_04.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_05' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_05.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_06' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_06.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_07' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_07.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_08' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_08.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_09' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_09.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_10' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_10.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_11' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_11.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_12' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_12.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_13' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_13.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_14' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_14.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_15' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_15.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_16' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_16.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_17' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_17.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_18' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_18.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_19' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_19.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_agot_watermark_20' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_agot_watermark_20.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_01' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_01.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_02' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_02.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_03' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_03.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_04' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_04.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_05' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_05.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_06' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_06.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_07' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_07.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_08' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_08.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_09' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_09.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_10' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_10.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_11' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_11.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+			icon = {
+				visible = "[ObjectsEqual( GetPlayer.MakeScope.Var('gr_wm').GetFlagName, 'gr_ek2_watermark_12' )]"
+				position = { 823 118 }
+				size = { 430 645 }
+				texture = "gfx/interface/window_gr_chronicle/watermarks/gr_ek2_watermark_12.dds"
+				alpha = 0.45
+				alwaystransparent = yes
+			}
+		}
+
+
+		################################################################
+		# LAYER 2a - LEFT PAGE: portrait, name, options.
+		################################################################
+
+		# --- ruler portrait ---
+		# Ported wholesale from gr_chronicle_window.gui's "Right column -
+		# legend-style portrait". Only the datacontext differs: the old
+		# scripted GUI had to read the page off a player variable, an event
+		# window gets the character handed to it directly.
+		#
+		# Do NOT go back to portrait_head here. It hardcodes size 110x120 so it
+		# ignores its container, and it carries Background_Area_Solid, which
+		# paints a black box behind the head. Ruinous on parchment.
+		#
+		# GetAnimatedPortraitEvenIfDead is the getter that matters: full-body
+		# painterly render that still works once the character is a weak scope.
+		widget = {
+			name = "gr_folio_portrait"
+			datacontext = "[EventWindowData.GetPortraitCharacter('left_portrait')]"
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			# Centred on the left page: 274 + (441 - 161) / 2 = 414. Top edge sits
+			# at 96, clear of the head ornament above it (62..91); bottom stays at
+			# 402 so nothing below has to move.
+			# Art is natively 400x760 so this is still a downscale. Sized down
+			# again to clear the ~130px the ledger needs above the back arrow.
+			position = { 414 96 }
+			size = { 161 306 }
+
+			background = {
+				name = "gr_portrait_gold_bg"
+				texture = "gfx/interface/window_legend_chronicle/marginalia_portrait_gold_bg.dds"
+			}
+
+			# BEGIN STYLIZE PAIR (generated by scripts/build_portrait.py)
+			# CK3 1.20 Stylize Deceased Characters: the first button is shown when the setting is off,
+			# the second, identical but for the painterly shader, when it is on (vanilla's own pattern,
+			# game/gui/shared/portraits.gui:1324-1341). Beautify needs nothing: it is applied where the
+			# portrait is generated.
+			portrait_button = {
+				name = "gr_folio_portrait_button"
+				visible = yes # gui119: 1.19 has no stylize setting
+				parentanchor = bottom|hcenter
+				size = { 161 306 }
+				alpha = 0.80
+
+				using = portrait_base
+				alwaystransparent = yes
+				tooltip_visible = no
+
+				portrait_texture = "[Character.GetAnimatedPortraitEvenIfDead( 'environment_painterly', 'camera_torso', GetPlayer.MakeScope.Var('gr_folio_pose').GetFlagName, PdxGetWidgetScreenSize( PdxGuiWidget.Self ) )]"
+
+				# CAMERA: the number that matters is the cylindrical radius in
+				# gfx/portraits/cameras/portrait_cameras.txt -- lower is closer.
+				#   camera_legend_chronicle  400  full body (was this)
+				#   camera_torso             240  head and upper body (now)
+				#   camera_head              150  face only
+				# Torso rather than head because the frame is tall and narrow
+				# (161x306); a face-only crop would leave dead space above and below,
+				# and would cut the crown and regalia that make a ruler legible.
+				#
+				# 3rd arg is the POSE. It is NOT a literal: gr_book_set_pose_effect
+				# picks one from the ruler's own record during gr_obituary.11's
+				# immediate, and GetFlagName hands the flag's name over as a string.
+				# Vanilla passes non-literals here too (war_overview uses
+				# Select_CString, the council window uses GetPortraitAnimation).
+				# It was 'normal', inherited from gr_chronicle_window.gui, which is
+				# not a defined animation at all -- the engine had been silently
+				# falling back to a default the whole time.
+				mask = "gfx/portraits/portrait_mask_legend_chronicle.dds"
+				effectname = "NoHighlight"
+
+				pop_out = yes
+				pop_out_v = 3.0
+				grayscale = no
+
+				blockoverride "portrait_button_template_onmouseenter" {}
+				blockoverride "portrait_button_template_onmouseleave" {}
+				blockoverride "portrait_button_template_onclick" {}
+				blockoverride "portrait_button_template_onrightclick" {}
+				blockoverride "portrait_button_template_tooltip" {}
+			}
+
+			portrait_button = {
+				name = "gr_folio_portrait_button_painted"
+				visible = no # gui119: 1.19 has no stylize setting
+				parentanchor = bottom|hcenter
+				size = { 161 306 }
+				alpha = 0.80
+
+				using = portrait_base
+				shaderfile = "gfx/FX/gui_painterly_portrait.shader"
+				alwaystransparent = yes
+				tooltip_visible = no
+
+				portrait_texture = "[Character.GetAnimatedPortraitEvenIfDead( 'environment_painterly', 'camera_torso', GetPlayer.MakeScope.Var('gr_folio_pose').GetFlagName, PdxGetWidgetScreenSize( PdxGuiWidget.Self ) )]"
+
+				# CAMERA: the number that matters is the cylindrical radius in
+				# gfx/portraits/cameras/portrait_cameras.txt -- lower is closer.
+				#   camera_legend_chronicle  400  full body (was this)
+				#   camera_torso             240  head and upper body (now)
+				#   camera_head              150  face only
+				# Torso rather than head because the frame is tall and narrow
+				# (161x306); a face-only crop would leave dead space above and below,
+				# and would cut the crown and regalia that make a ruler legible.
+				#
+				# 3rd arg is the POSE. It is NOT a literal: gr_book_set_pose_effect
+				# picks one from the ruler's own record during gr_obituary.11's
+				# immediate, and GetFlagName hands the flag's name over as a string.
+				# Vanilla passes non-literals here too (war_overview uses
+				# Select_CString, the council window uses GetPortraitAnimation).
+				# It was 'normal', inherited from gr_chronicle_window.gui, which is
+				# not a defined animation at all -- the engine had been silently
+				# falling back to a default the whole time.
+				mask = "gfx/portraits/portrait_mask_legend_chronicle.dds"
+				effectname = "NoHighlight"
+
+				pop_out = yes
+				pop_out_v = 3.0
+				grayscale = no
+
+				blockoverride "portrait_button_template_onmouseenter" {}
+				blockoverride "portrait_button_template_onmouseleave" {}
+				blockoverride "portrait_button_template_onclick" {}
+				blockoverride "portrait_button_template_onrightclick" {}
+				blockoverride "portrait_button_template_tooltip" {}
+			}
+			# END STYLIZE PAIR
+			### Ornate frame overlay, drawn last so it sits in front ###
+			icon = {
+				name = "gr_portrait_frame_overlay"
+				size = { 100% 100% }
+				texture = "gfx/interface/window_legend_chronicle/marginalia_portrait_frame_legendary.dds"
+				alwaystransparent = yes
+			}
+		}
+
+		# --- ruler name ---
+		text_multi = {
+			name = "gr_page_title"
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			position = { 292 412 }
+			size = { 405 34 }
+			max_width = 405
+			text = "[EventWindowData.GetTitle]"
+			align = center
+			fontsize = 24
+			default_format = "#light_background"
+		}
+
+		# --- reign dates ---
+		text_multi = {
+			name = "gr_page_dates"
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			position = { 292 448 }
+			size = { 405 24 }
+			max_width = 405
+			text = "GR_BOOK_DATES"
+			align = center
+			fontsize = 15
+			default_format = "#light_background"
+		}
+
+		################################################################
+		# COVER-ONLY left page: house arms, name, motto, dynasty total.
+		# The ONLY thing distinguishing the cover from a ruler folio is that
+		# gr_book.1 supplies no left_portrait. Everything below is gated on
+		# that absence, and the folio's portrait/dates/ledger on its presence,
+		# so one window serves both spreads.
+		################################################################
+		# A house coat of arms needs FIVE things, not one. The shield's shape is
+		# culture-specific, supplied as a mask/offset/scale off
+		# DynastyHouse.GetCulture.GetTemplateData. Give it only `coat_of_arms`
+		# and it parses cleanly, logs nothing, and draws nothing -- which is
+		# exactly what happened through three attempts here.
+		#
+		# Structure copied from vanilla's coa_house_widget usage: the house on an
+		# outer datacontext, the culture template on an inner one (contexts stack,
+		# so DynastyHouse stays reachable inside), then coa_house_widget with
+		# CoA_House_Defaults wrapping the icon and its culture frame.
+		#
+		# Texture is requested at 230 (a size vanilla actually caches) and drawn
+		# larger; the frame/icon ratio 260:195 matches vanilla's 480:360.
+		widget = {
+			name = "gr_cover_arms"
+			visible = "[Not(EventWindowData.HasPortraitCharacter('left_portrait'))]"
+			datacontext = "[GetPlayer.GetHouse]"
+			# Centred on the left page: 274 + (441 - 260) / 2 = 364.
+			position = { 364 98 }
+			size = { 260 260 }
+
+			widget = {
+				datacontext = "[DynastyHouse.GetCulture.GetTemplateData]"
+				size = { 100% 100% }
+
+				coa_house_widget = {
+					parentanchor = center
+					size = { 260 260 }
+					using = CoA_House_Defaults
+
+					# CoA_House_Defaults ships a button whose onclick and tooltip
+					# read Character. Here the datacontext is a DynastyHouse, so
+					# Character is nobody and clicking opened a blank "Lowborn /
+					# Unlanded" character sheet. The arms are decoration on a book
+					# page, not a link, so the button is emptied out.
+					blockoverride "coa_button" {
+						# button_ignore takes both/none/right; 'all' is not a value, and
+						# NoOp is not a function. Both errored in the log, so the whole
+						# override was discarded and the arms still opened an empty
+						# character sheet.
+						button_ignore = both
+						tooltip_visible = no
+					}
+
+					coat_of_arms_icon = {
+						parentanchor = center
+						size = { 195 195 }
+						coat_of_arms = "[DynastyHouse.GetHouseCoA.GetTexture('(int32)230','(int32)230')]"
+						coat_of_arms_slot = "[DynastyHouse.GetHouseCoA.GetSlot('(int32)230','(int32)230')]"
+						coat_of_arms_mask = "[CultureTemplateData.GetCultureHouseCoAMask]"
+						coat_of_arms_offset = "[CultureTemplateData.GetCultureHouseCoAOffset]"
+						coat_of_arms_scale = "[CultureTemplateData.GetCultureHouseCoAScale]"
+
+						modify_texture = {
+							texture = "gfx/interface/coat_of_arms/coa_overlay.dds"
+							blend_mode = overlay
+							alpha = 0.4
+						}
+					}
+
+					coa_house_frame = {
+						parentanchor = center
+						size = { 260 260 }
+						texture = "[CultureTemplateData.GetCultureHouseCoAFrame]"
+					}
+				}
+			}
+		}
+
+		text_multi = {
+			name = "gr_cover_house"
+			visible = "[Not(EventWindowData.HasPortraitCharacter('left_portrait'))]"
+			position = { 292 382 }
+			size = { 405 40 }
+			max_width = 405
+			text = "GR_BOOK_HOUSE_NAME"
+			align = center
+			fontsize = 26
+			default_format = "#light_background"
+		}
+
+		text_multi = {
+			name = "gr_cover_motto"
+			visible = "[Not(EventWindowData.HasPortraitCharacter('left_portrait'))]"
+			position = { 292 424 }
+			size = { 405 60 }
+			max_width = 405
+			text = "GR_BOOK_HOUSE_MOTTO"
+			align = center
+			fontsize = 16
+			default_format = "#light_background"
+		}
+
+		text_multi = {
+			name = "gr_cover_total"
+			visible = "[Not(EventWindowData.HasPortraitCharacter('left_portrait'))]"
+			position = { 292 582 }
+			size = { 405 110 }
+			max_width = 405
+			text = "GR_BOOK_HOUSE_TOTAL"
+			align = center
+			fontsize = 16
+			default_format = "#light_background"
+		}
+
+		# --- marginalia rule between the portrait and the ledger ---
+		# Vanilla art, natively 1048x80, so 380x29 keeps its aspect.
+		icon = {
+			name = "gr_page_divider"
+			position = { 304 478 }
+			size = { 380 29 }
+			texture = "gfx/interface/window_legend_chronicle/marginalia_divider.dds"
+			alwaystransparent = yes
+		}
+
+		################################################################
+		# The ruler's realm arms, seated under the rule. coa_realm_medium_crown
+		# is vanilla's crowned shield; it reads Character.GetPrimaryTitle off the
+		# datacontext, so the remembered ruler's own realm is what appears, and
+		# the crown suppresses itself for mercenaries, holy orders and landless
+		# adventurers via the type's own blockoverride.
+		################################################################
+		widget = {
+			name = "gr_folio_realm_arms"
+			datacontext = "[EventWindowData.GetPortraitCharacter('left_portrait')]"
+			# Hidden for TITLELESS entries. Close-family obituaries (Path 2 of
+			# gr_is_qualifying_npc) have no landed requirement, so unlanded
+			# dynasty members do get chronicled, and coa_realm_medium_crown
+			# reads Character.GetPrimaryTitle, which they do not have.
+			#
+			# Gated on gr_title_count rather than Character.HasLandedTitles:
+			# these characters are DEAD and their titles have already passed to
+			# an heir, so the live getter is unreliable for them. gr_title_count
+			# was recorded at the moment of death and restored onto the player
+			# by gr_replay_restore_vars_effect, so it reflects what they actually
+			# held when the page was written.
+			visible = "[And(EventWindowData.HasPortraitCharacter('left_portrait'), ObjectsEqual( GetPlayer.MakeScope.Var('gr_folio_titled').GetFlagName, 'yes' ))]"
+			position = { 292 512 }
+			size = { 405 96 }
+
+			coa_realm_medium_crown = {
+				parentanchor = center
+			}
+		}
+
+		# --- the ledger: what the reign actually scored ---
+		text_multi = {
+			name = "gr_page_ledger"
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			position = { 292 616 }
+			size = { 405 96 }
+			max_width = 405
+			text = "GR_BOOK_LEDGER"
+			align = center
+			fontsize = 15
+			default_format = "#light_background"
+		}
+
+		################################################################
+		# Head ornaments. Vanilla marginalia_divider (natively 1048x80) at
+		# reduced alpha, one per page, sitting above the content on both
+		# spreads. Same art as the mid-page rule on the folio, so the book
+		# reads as one hand throughout.
+		#
+		# The right-hand one is deliberately BELOW the close X (which lives at
+		# y 74) and narrower than the page, so the two never collide.
+		################################################################
+		icon = {
+			name = "gr_left_head_ornament"
+			position = { 304 62 }
+			size = { 380 29 }
+			texture = "gfx/interface/window_legend_chronicle/marginalia_divider.dds"
+			alpha = 0.72
+			alwaystransparent = yes
+		}
+
+		icon = {
+			name = "gr_right_head_ornament"
+			position = { 836 96 }
+			size = { 405 29 }
+			texture = "gfx/interface/window_legend_chronicle/marginalia_divider.dds"
+			alpha = 0.72
+			alwaystransparent = yes
+		}
+
+		################################################################
+		# LAYER 2b - RIGHT PAGE, the obituary. Scrolls, because a GR
+		# obituary will not fit 453 x 717 at a readable size.
+		################################################################
+		widget = {
+			name = "gr_right_page"
+			position = { 812 132 }
+			size = { 453 643 }
+
+			scrollarea = {
+				name = "gr_obituary_scrollarea"
+				size = { 100% 100% }
+				scrollbarpolicy_horizontal = always_off
+
+				scrollbar_vertical = {
+					using = Scrollbar_Vertical
+					blockoverride "alpha" {
+						alpha = 0.35
+					}
+				}
+
+				scrollwidget = {
+					vbox = {
+						layoutpolicy_vertical = expanding
+						margin = { 24 20 }
+
+						text_multi = {
+							name = "gr_obituary_text"
+							layoutpolicy_horizontal = expanding
+							max_width = 400
+							text = "[EventWindowData.GetDescription]"
+							autoresize = yes
+							fontsize = 17
+							default_format = "#light_background"
+							margin = { 0 8 }
+						}
+
+						expand = {}
+					}
+				}
+			}
+		}
+
+		################################################################
+		# ORDER MATTERS BELOW THIS LINE.
+		# The right page's scrollarea spans x 812..1265, y 58..775, which
+		# geometrically contains BOTH the close X (1199,74) and the forward
+		# arrow (1193,712). Declaration order is z-order, so while the page
+		# was declared last it sat in front of them and ate their clicks.
+		# They still DREW, because the scrollarea's background is transparent,
+		# which made it look like the X was simply broken. The buttons must
+		# stay declared AFTER the page. Do not move them back up.
+		################################################################
+
+		################################################################
+		# PAGE NAVIGATION
+		#
+		# CK3 gives event options exactly TWO internal flags, 'special' and
+		# 'dangerous'. There is no way to invent more, so the three buttons
+		# are separated as:
+		#
+		#   special    -> the red X          (top-right of the right page)
+		#   dangerous  -> back a page        (bottom-left of the left page)
+		#   unflagged  -> forward a page     (bottom-right of the right page)
+		#
+		# 'dangerous' is being used purely as a channel here, not as a
+		# warning. Nothing styles off it because these are hand-rolled
+		# button_icons rather than button_eventoption.
+		#
+		# HARD CAP: three positioned buttons. A fourth option type has
+		# nowhere to go and would stack into the forward slot, since
+		# unflagged is the catch-all. If we ever need "return to the cover",
+		# it has to share a slot or go back to a stacked list.
+		#
+		# Visibility is NOT handled here. An option whose `trigger` fails is
+		# never in GetOptions at all, so the first page simply has no back
+		# button and the last has no forward one.
+		################################################################
+
+		# --- back a page: bottom-left of the LEFT page (x 274..715) ---
+		margin_widget = {
+			name = "gr_book_prev"
+			parentanchor = top|left
+			# Dangerous options are row 1 (close occupies row 0, invisible here
+			# but still advancing the grid). 660 + 56 renders the arrow at 716.
+			# The cover has no dangerous options, so this draws nothing there.
+			position = { 290 660 }
+			layer = top
+			size = { 56 56 }
+			allow_outside = yes
+
+			fixedgridbox = {
+				datamodel = "[EventWindowData.GetOptions]"
+				addcolumn = 56
+				addrow = 56
+
+				item = {
+					button_icon = {
+						visible = "[EventOption.HasFlag('dangerous')]"
+						size = { 48 48 }
+						texture = "gfx/interface/icons/flat_icons/window_back.dds"
+						color = { 0.22 0.15 0.09 1 }
+						onclick = "[EventOption.Select]"
+						tooltip = "[EventOption.GetTooltip]"
+						using = tooltip_above
+					}
+				}
+			}
+		}
+
+		# --- forward: bottom-right of the RIGHT page (x 812..1265) ---
+		# The plain option's row differs by spread (ORDER CONTRACT in the
+		# events): row 1 on the cover (after close), row 2 on folios (after
+		# close and one dangerous). Two sibling grids compensate, gated by the
+		# same portrait test the watermark layer already proves reliable.
+		margin_widget = {
+			name = "gr_book_next_cover"
+			visible = "[Not(EventWindowData.HasPortraitCharacter('left_portrait'))]"
+			parentanchor = top|left
+			position = { 1193 660 }
+			layer = top
+			size = { 56 168 }
+			allow_outside = yes
+
+				fixedgridbox = {
+					datamodel = "[EventWindowData.GetOptions]"
+					addcolumn = 56
+					addrow = 56
+
+					item = {
+						button_icon = {
+							visible = "[Not(Or(EventOption.HasFlag('special'), EventOption.HasFlag('dangerous')))]"
+							size = { 48 48 }
+							texture = "gfx/interface/icons/flat_icons/next.dds"
+							color = { 0.22 0.15 0.09 1 }
+							onclick = "[EventOption.Select]"
+							tooltip = "[EventOption.GetTooltip]"
+							using = tooltip_above
+						}
+					}
+				}
+		}
+
+		margin_widget = {
+			name = "gr_book_next_folio"
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			parentanchor = top|left
+			position = { 1193 604 }
+			layer = top
+			size = { 56 224 }
+			allow_outside = yes
+
+				fixedgridbox = {
+					datamodel = "[EventWindowData.GetOptions]"
+					addcolumn = 56
+					addrow = 56
+
+					item = {
+						button_icon = {
+							visible = "[Not(Or(EventOption.HasFlag('special'), EventOption.HasFlag('dangerous')))]"
+							size = { 48 48 }
+							texture = "gfx/interface/icons/flat_icons/next.dds"
+							color = { 0.22 0.15 0.09 1 }
+							onclick = "[EventOption.Select]"
+							tooltip = "[EventOption.GetTooltip]"
+							using = tooltip_above
+						}
+					}
+				}
+		}
+
+
+		################################################################
+		# Red X, top-right of the RIGHT page.
+		# This is a real event option rather than a window close, so
+		# selecting it runs gr_obituary.11's after block. Closing the
+		# window directly would skip that cleanup and leave the chronicle
+		# window rendering from variables that were just cleared.
+		################################################################
+		margin_widget = {
+			name = "gr_book_close"
+			parentanchor = top|left
+			# Top-right of the right page (x 812..1265, y 58..775). close is
+			# datamodel row 0 by the ORDER CONTRACT in the events, so this
+			# position is exact, with no invisible rows above shifting it.
+			# Snug in the page's top-right corner, above the head ornament
+			# (y 96..125) and just inside the deckle edge at x 1265.
+			position = { 1216 60 }
+			layer = top
+			size = { 50 50 }
+			allow_outside = yes
+
+			fixedgridbox = {
+				datamodel = "[EventWindowData.GetOptions]"
+				addcolumn = 50
+				addrow = 50
+
+				item = {
+					button_icon = {
+						visible = "[EventOption.HasFlag('special')]"
+						size = { 40 40 }
+						texture = "gfx/interface/icons/flat_icons/window_close.dds"
+						color = { 0.72 0.12 0.10 1 }
+						onclick = "[EventOption.Select]"
+						tooltip = "CLOSE_TOOLTIP"
+						using = tooltip_below
+					}
+				}
+			}
+		}
+
+		# --- copy page text: sits left of the X, folio pages only ---
+		# A plain button rather than an event option: nothing to select, so it
+		# lives outside the option grids and the row contract entirely.
+		# CopyStringToClipboard is the explicit clipboard call; the barbershop
+		# DNA buttons prove clipboard writes work outside debug mode. The
+		# argument is the same resolved prose the right page is rendering, so
+		# what lands on the clipboard is exactly what the reader sees,
+		# formatting markers (#italic/#bold) included.
+		button_copy = {
+			name = "gr_book_copy_page"
+			visible = "[EventWindowData.HasPortraitCharacter('left_portrait')]"
+			position = { 1166 64 }
+			size = { 36 36 }
+			color = { 0.22 0.15 0.09 1 }
+			onclick = "[EventWindowData.CopyStringToClipboard( EventWindowData.GetDescription )]"
+			tooltip = "gr_book_copy_tt"
+			using = tooltip_below
+		}
+
+
+		################################################################
+		# LAYER 3 - gutter shadow, drawn last so it sits in FRONT of the
+		# text and makes the pages read as inset rather than pasted on.
+		# Commented out rather than visible=no: CK3 still tries to load a
+		# texture on a hidden widget and logs a VFSOpen error for it.
+		# Re-enable once gr_book_gutter.dds exists (soft black-to-clear
+		# gradient, ~180px wide, centred on the spine at x=764).
+		################################################################
+		# icon = {
+		# 	name = "gr_book_gutter"
+		# 	position = { 674 40 }
+		# 	size = { 180 780 }
+		# 	texture = "gfx/interface/window_gr_chronicle/gr_book_gutter.dds"
+		# 	alpha = 0.40
+		# 	alwaystransparent = yes
+		# }
+
+		################################################################
+		# The dynasty coat of arms for the frontispiece is NOT here yet.
+		# My first attempt guessed the getter chain and CK3 rejected both
+		# properties. Vanilla only ever renders a dynasty CoA through
+		# BookmarkCharacter, so the live-scope chain needs verifying in
+		# game before it goes in. It will land with the frontispiece event.
+		################################################################
+	}
+}

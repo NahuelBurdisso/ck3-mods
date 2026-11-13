@@ -1,0 +1,9 @@
+﻿namespace = gui119
+
+# gui119.0001 = {
+#     type = character_event
+#     title = gui119.0001.t
+#     desc = gui119.0001.desc
+#     theme = default
+#     option = { name = gui119.0001.a }
+# }
