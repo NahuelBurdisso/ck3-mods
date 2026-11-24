@@ -1,0 +1,12 @@
+{
+  "cwtools.cache.ck3": "D:/SteamLibrary/steamapps/common/Crusader Kings III",
+  "cwtools.rules_version": "latest",
+  "cwtools.localisation.languages": [
+    "English"
+  ],
+  "cwtools.errors.vanilla": false,
+  "files.eol": "\n",
+  "[yaml]": {
+    "files.encoding": "utf8bom"
+  }
+}
