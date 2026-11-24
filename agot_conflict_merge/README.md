@@ -112,8 +112,8 @@ Westeros). Originals are in the old copy under
 `C:/Users/nahue/Documentos/Paradox Interactive/Crusader Kings III/mod/agot_conflict_merge`.
 
 **`gui/window_character.gui` must never come back here.** That collision is now
-AGOT CBO Base → [other mod] → [other mod] AGOT Compatibility, and [other mod] AGOT
-Compatibility is a purpose-built patch that already resolves it; a trunk shipped here
+between AGOT CBO Base and two other mods in the playset, and one of those is a
+purpose-built compatibility patch that already resolves it; a trunk shipped here
 would clobber it. It is also the file behind the DireWolves↔CBO load crash.
 
 ## Brace balance — count real braces only
