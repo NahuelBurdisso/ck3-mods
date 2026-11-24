@@ -1,0 +1,104 @@
+﻿# Claude Eyes - telemetry dump.
+#
+# debug_log is the ONLY channel out of the running game: the engine ships no
+# effect that writes a file or forces a save. The effects dump documents
+# `debug_log = message, the message can be a localization string with ROOT,
+# SCOPE and PREV available`, and AGOT itself puts inline data functions in a
+# quoted literal at
+# common/on_action/agot_on_actions/agot_esr_on_actions.txt:285, so no
+# localization file is needed here.
+#
+# LINE FORMAT: CLD;<TAG>;key=value;key=value
+#   `;` separates fields, `=` separates key from value, and the payload never
+#   contains a literal `[` or `]` outside a data function - square brackets in a
+#   logged string ARE data-function syntax and a stray one logs a data error.
+#
+# Every call site is gated on is_ai = no, so the iterators behind the script
+# values below only ever run for the player.
+
+# =========================================================================
+# CORE DIGEST - only data functions with a shipped call site behind them.
+# =========================================================================
+# SCOPE PREFIXES, settled by two spike runs on 2026-09-22 against a live AGOT
+# save, and not negotiable:
+#   ROOT.Char.*     renders EMPTY, silently.
+#   ROOT.ScriptValue('x')  logs `Data error in loc string` in error.log.
+#   SCOPE.Char.*    renders the literal ERROR:[SCOPE.Char.GetGold|
+#   THIS.Char.<fn>            WORKS - gold=377, age=15, heir=Brandon Stark
+#   THIS.ScriptValue('<v>')   WORKS - income=41.5
+# So THIS is the single prefix for everything. SCOPE.ScriptValue also works but
+# is not used, because one prefix is one fewer thing to get wrong.
+#
+# Two data functions come back wrapped in the game's own text-format markup -
+# GetPrimaryTitle.GetName yields `ONCLICK:TITLE,1355 TOOLTIP:LANDED_TITLE,1355
+# L; The North!!!` and a |V number yields `V; 29944!`. That is stripped by
+# clean_value() in play/ck3play.py rather than avoided here, because the raw
+# form carries the title ID, which is worth keeping.
+cld_digest_effect = {
+	debug_log = "CLD;WHO;date=[GetCurrentDate.GetStringShort];id=[THIS.Char.GetID];name=[THIS.Char.GetFullNameNoTooltip];age=[THIS.Char.GetAge];title=[THIS.Char.GetPrimaryTitle.GetName]"
+	debug_log = "CLD;PURSE;gold=[THIS.Char.GetGold|0];income=[THIS.ScriptValue('cld_income')|1];prestige=[THIS.Char.GetPrestige|0];piety=[THIS.Char.GetPiety|0];dread=[THIS.Char.GetDread|0]"
+	debug_log = "CLD;REALM;domain=[THIS.ScriptValue('cld_domain')|0];domain_limit=[THIS.ScriptValue('cld_domain_limit')|0];vassals=[THIS.Char.GetNumVassalsTowardsLimit];vassal_limit=[THIS.Char.GetVassalLimit];counties=[THIS.ScriptValue('cld_realm_counties')|0];years_ruled=[THIS.ScriptValue('cld_years_ruled')|0];angry_vassals=[THIS.ScriptValue('cld_angry_vassals')|0]"
+	debug_log = "CLD;ARMY;strength=[THIS.ScriptValue('cld_strength')|0];max_strength=[THIS.ScriptValue('cld_max_strength')|0];knights=[THIS.ScriptValue('cld_knights')|0];wars=[THIS.ScriptValue('cld_wars')|0];war_enemies=[THIS.ScriptValue('cld_war_enemies')|0];allies=[THIS.ScriptValue('cld_allies')|0];truces=[THIS.ScriptValue('cld_truces')|0]"
+	debug_log = "CLD;THREAT;factions=[THIS.ScriptValue('cld_factions')|0];faction_power=[THIS.ScriptValue('cld_faction_power_sum')|0];hostile_schemes=[THIS.ScriptValue('cld_hostile_schemes')|0];epidemics=[THIS.ScriptValue('cld_epidemics')|0];prisoners=[THIS.ScriptValue('cld_prisoners')|0]"
+	debug_log = "CLD;BLOOD;children=[THIS.ScriptValue('cld_children')|0];claims=[THIS.ScriptValue('cld_claims')|0];heir=[THIS.Char.GetPlayerHeir.GetFullNameNoTooltip]"
+	cld_flags_effect = yes
+	debug_log = "CLD;END;date=[GetCurrentDate.GetStringShort]"
+}
+
+# =========================================================================
+# BOOLEAN STATE - things debug_log cannot print as a number, emitted as
+# presence/absence markers instead. One line per condition, so a missing line
+# is a meaningful negative.
+# =========================================================================
+cld_flags_effect = {
+	if = {
+		limit = { is_at_war = yes }
+		debug_log = "CLD;FLAG;at_war=yes"
+	}
+	if = {
+		limit = { is_imprisoned = yes }
+		debug_log = "CLD;FLAG;imprisoned=yes"
+	}
+	if = {
+		limit = { is_landed = no }
+		debug_log = "CLD;FLAG;landless=yes"
+	}
+	if = {
+		limit = { is_independent_ruler = yes }
+		debug_log = "CLD;FLAG;independent=yes"
+	}
+	if = {
+		limit = { health < 2 }
+		debug_log = "CLD;FLAG;health_poor=yes"
+	}
+	if = {
+		limit = { stress_level >= 2 }
+		debug_log = "CLD;FLAG;stress_high=yes"
+	}
+	if = {
+		limit = { is_pregnant = yes }
+		debug_log = "CLD;FLAG;pregnant=yes"
+	}
+	if = {
+		limit = { any_targeting_faction = { faction_is_at_war = yes } }
+		debug_log = "CLD;FLAG;faction_revolt=yes"
+	}
+	if = {
+		limit = { exists = betrothed }
+		debug_log = "CLD;FLAG;betrothed=yes"
+	}
+	if = {
+		limit = { is_married = no }
+		debug_log = "CLD;FLAG;unmarried=yes"
+	}
+	if = {
+		limit = { NOT = { exists = player_heir } }
+		debug_log = "CLD;FLAG;no_heir=yes"
+	}
+}
+
+# The probe suite (P01, P16-P25) lived here across two spike runs and is gone:
+# every shape it tested either rendered and was promoted into the digest above,
+# or failed and is recorded in the SCOPE PREFIXES comment. If a new data
+# function ever needs testing, rebuild it with numbers continuing from 26 so a
+# log holding several rounds can never be misread.

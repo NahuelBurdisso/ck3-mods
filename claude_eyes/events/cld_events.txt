@@ -1,0 +1,18 @@
+﻿namespace = cld
+
+# On-demand digest. Raised from the console with `event cld.1`, which is the
+# spelling that works - a bare `effect = { ... }` is rejected by the console
+# with "effect is empty" and writes nothing to any log, so a parse failure and
+# a clean sweep look identical there.
+#
+# `Event cld.1 is orphaned` in error.log is expected and cosmetic: no on_action
+# fires this, by design.
+cld.1 = {
+	type = character_event
+	hidden = yes
+
+	immediate = {
+		debug_log = "CLD;TRIG;kind=ondemand;who=player"
+		cld_digest_effect = yes
+	}
+}

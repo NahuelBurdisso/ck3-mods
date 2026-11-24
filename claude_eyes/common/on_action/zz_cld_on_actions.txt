@@ -1,0 +1,270 @@
+﻿# Claude Eyes - the watchdog.
+#
+# RULE, and the whole reason this file looks the way it does: an on_action can
+# have only ONE `trigger` block across the entire playset, and `effect` blocks
+# are resolved by file load order rather than merged. So this file NEVER adds a
+# `trigger` or an `effect` to a shared vanilla/AGOT on_action. It only appends
+# to the `on_actions = { }` list, which IS additive, and every gate lives inside
+# our own nested on_action. Grand Remembrance documents the same rule at
+# common/on_action/zz_gr_memory_tracking.txt:11-19, where breaking it silently
+# gated vanilla's own title handling to players only.
+#
+# Named zz_ so it loads after vanilla and AGOT. That only affects which `effect`
+# block wins, which is exactly what we are staying out of.
+#
+# Scope notes come from docs/api/1.19.0.6/on_actions.log plus the vanilla
+# on_action files' own header comments.
+
+# =========================================================================
+# SUCCESSION AND DEATH
+# =========================================================================
+# root = the dying character
+on_death = {
+	on_actions = { cld_on_death }
+}
+
+cld_on_death = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=death;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}
+
+# root = the new holder, scope:title, scope:previous_holder
+on_title_gain_inheritance = {
+	on_actions = { cld_on_inheritance }
+}
+
+cld_on_inheritance = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=succession;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}
+
+# =========================================================================
+# TITLES
+# =========================================================================
+# root = the new holder
+on_title_gain = {
+	on_actions = { cld_on_title_gain }
+}
+
+cld_on_title_gain = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=title_gain;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}
+
+# root = the old holder
+on_title_lost = {
+	on_actions = { cld_on_title_lost }
+}
+
+cld_on_title_lost = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=title_lost;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}
+
+# root = the claimant, scope:title
+on_explicit_claim_gain = {
+	on_actions = { cld_on_claim_gain }
+}
+
+cld_on_claim_gain = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=claim_gain;who=player"
+		}
+	}
+}
+
+# root = the liege, scope:vassal
+on_vassal_gained = {
+	on_actions = { cld_on_vassal_gained }
+}
+
+cld_on_vassal_gained = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=vassal_gained;who=player"
+		}
+	}
+}
+
+# =========================================================================
+# WAR
+# =========================================================================
+# root = none. The available scopes are the casus belli's on_declaration set,
+# so every read below is guarded with `exists` before it is dereferenced.
+on_war_started = {
+	on_actions = { cld_on_war_started }
+}
+
+cld_on_war_started = {
+	effect = {
+		if = {
+			limit = {
+				exists = scope:attacker
+				scope:attacker = { is_ai = no }
+			}
+			debug_log = "CLD;TRIG;kind=war_started;side=attacker"
+			scope:attacker = { cld_digest_effect = yes }
+		}
+		if = {
+			limit = {
+				exists = scope:defender
+				scope:defender = { is_ai = no }
+			}
+			debug_log = "CLD;TRIG;kind=war_started;side=defender"
+			scope:defender = { cld_digest_effect = yes }
+		}
+	}
+}
+
+# root = the joining character, scope:war
+on_join_war_as_secondary = {
+	on_actions = { cld_on_join_war }
+}
+
+cld_on_join_war = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=joined_war;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}
+
+# root = the occupying character, scope:barony, scope:county, scope:war
+on_siege_completion = {
+	on_actions = { cld_on_siege }
+}
+
+cld_on_siege = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=siege_done;side=ours"
+		}
+		if = {
+			limit = {
+				exists = scope:previous_controller
+				scope:previous_controller = { is_ai = no }
+			}
+			debug_log = "CLD;TRIG;kind=siege_done;side=theirs"
+			scope:previous_controller = { cld_digest_effect = yes }
+		}
+	}
+}
+
+# =========================================================================
+# PERSON
+# =========================================================================
+# root = the prisoner, scope:imprisoner
+on_imprison = {
+	on_actions = { cld_on_imprison }
+}
+
+cld_on_imprison = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=imprisoned;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}
+
+# root = the released character
+on_release_from_prison = {
+	on_actions = { cld_on_release }
+}
+
+cld_on_release = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=released;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}
+
+# root = the major partner, scope:spouse
+on_marriage = {
+	on_actions = { cld_on_marriage }
+}
+
+cld_on_marriage = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=marriage;who=player"
+		}
+		if = {
+			limit = {
+				exists = scope:spouse
+				scope:spouse = { is_ai = no }
+			}
+			debug_log = "CLD;TRIG;kind=marriage;who=player_spouse"
+		}
+	}
+}
+
+# root = the parent, scope:child
+on_birth_child = {
+	on_actions = { cld_on_birth }
+}
+
+cld_on_birth = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=birth;who=player"
+		}
+	}
+}
+
+# =========================================================================
+# THE PERIODIC HEARTBEAT
+# root = character, fires four times a year. This is the cheapest hook the
+# engine exposes with a character root, and it is what carries the situations
+# that have NO on_action at all - factions forming, truces expiring, the heir
+# changing, health decaying, an epidemic arriving. None of those are detected
+# in script: the digest is emitted unconditionally and the reader diffs two
+# consecutive digests to find the crossing. Keeping the comparison outside the
+# game is what lets a new watch condition be added without another 7-minute
+# restart.
+# =========================================================================
+quarterly_playable_pulse = {
+	on_actions = { cld_quarterly }
+}
+
+cld_quarterly = {
+	effect = {
+		if = {
+			limit = { is_ai = no }
+			debug_log = "CLD;TRIG;kind=heartbeat;who=player"
+			cld_digest_effect = yes
+		}
+	}
+}

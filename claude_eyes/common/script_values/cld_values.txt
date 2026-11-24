@@ -1,0 +1,107 @@
+﻿# Claude Eyes - derived numbers for the telemetry digest.
+#
+# Every term used here is confirmed present in the engine's own script_docs dump
+# at docs/api/1.19.0.6 (triggers.log / effects.log). Terms that are only
+# *probable* live in the PROBE section at the bottom and are printed on their own
+# debug_log line, so that a compile failure can only ever cost that one line.
+#
+# All of these are evaluated on the PLAYER only (every call site is gated on
+# is_ai = no), so the unbounded iterators below are bounded in practice.
+
+# --- purse ---------------------------------------------------------------
+cld_income = { value = monthly_character_income }
+
+# --- realm ---------------------------------------------------------------
+cld_domain = { value = domain_size }
+cld_domain_limit = { value = domain_limit }
+cld_realm_counties = { value = realm_size }
+cld_years_ruled = { value = years_as_ruler }
+
+# No cld_vassals / cld_vassal_limit here on purpose: the digest reads
+# THIS.Char.GetNumVassalsTowardsLimit and THIS.Char.GetVassalLimit directly,
+# which is both cheaper than an iterator and the same number the game's own
+# vassal-limit warning uses.
+
+cld_knights = {
+	value = 0
+	every_knight = { add = 1 }
+}
+
+cld_prisoners = {
+	value = 0
+	every_prisoner = { add = 1 }
+}
+
+# --- army ----------------------------------------------------------------
+cld_strength = { value = current_military_strength }
+cld_max_strength = { value = max_military_strength }
+
+cld_wars = {
+	value = 0
+	every_character_war = { add = 1 }
+}
+
+cld_war_enemies = {
+	value = 0
+	every_war_enemy = { add = 1 }
+}
+
+cld_allies = {
+	value = 0
+	every_ally = { add = 1 }
+}
+
+cld_truces = {
+	value = 0
+	every_truce_target = { add = 1 }
+}
+
+# --- threat --------------------------------------------------------------
+cld_factions = {
+	value = 0
+	every_targeting_faction = { add = 1 }
+}
+
+cld_hostile_schemes = {
+	value = 0
+	every_targeting_scheme = { add = 1 }
+}
+
+cld_epidemics = {
+	value = 0
+	every_character_epidemic = { add = 1 }
+}
+
+# --- blood ---------------------------------------------------------------
+cld_children = {
+	value = 0
+	every_child = { add = 1 }
+}
+
+cld_claims = {
+	value = 0
+	every_claim = { add = 1 }
+}
+
+# --- PROBE: shapes not yet confirmed at a shipped call site ---------------
+# cld_faction_power_sum uses `faction_power` as a VALUE term in faction scope;
+# the dump documents it as a trigger only.
+cld_faction_power_sum = {
+	value = 0
+	every_targeting_faction = { add = faction_power }
+}
+
+# cld_angry_vassals uses the `opinion = { target = ... value = ... }` block
+# inside an iterator `limit`, evaluated from the vassal's side.
+cld_angry_vassals = {
+	value = 0
+	every_vassal = {
+		limit = {
+			opinion = {
+				target = liege
+				value < 0
+			}
+		}
+		add = 1
+	}
+}
