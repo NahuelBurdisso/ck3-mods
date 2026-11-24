@@ -1,0 +1,208 @@
+﻿l_english:
+
+ # AGOT: War of the Small Folk - English
+
+ ### County modifiers ########################################################
+ wotsf_suffering_1_modifier:0 "Restless Fields"
+ wotsf_suffering_1_modifier_desc:0 "War has passed through here. The harvest was thinner than the priests promised, and the smallfolk keep their eyes on the road."
+ wotsf_suffering_2_modifier:0 "A Land in Pain"
+ wotsf_suffering_2_modifier_desc:0 "Half the crofts stand empty. What the soldiers did not take, they burned, and no one has come to rebuild."
+ wotsf_suffering_3_modifier:0 "Scorched Earth"
+ wotsf_suffering_3_modifier_desc:0 "Nothing grows and nobody rules. The living eat what the dead left behind, and the roads belong to whoever carries steel."
+
+ ### Decisions ###############################################################
+ wotsf_assess_smallfolk_decision:0 "Assess the State of the Smallfolk"
+ wotsf_assess_smallfolk_decision_desc:0 "Send stewards and septons out among your counties to count the empty fields, the burned crofts and the graves.\n\nThey will tell you what your levies already know: that a war is not over where the banners furl.\n\n#EMP Suffering follows the land, not the lord. A county taken by conquest arrives with its wounds intact.#!"
+ wotsf_assess_cooldown_tt:0 "You have not sent out stewards in the past year"
+ wotsf_assess_effect_tt:0 "Your stewards ride out and bring back a count of the counties you hold."
+ wotsf_promised_lord_tt:0 "The lord you promised justice to is still owed it"
+ wotsf_capital_suffering_tt:0 "Your capital county carries some suffering"
+ wotsf_capital_chevauchee_ready_tt:0 "Your capital county is not already being raided and is off cooldown"
+ wotsf_assess_smallfolk_decision_tooltip:0 "Count the wounds of every county you hold."
+ wotsf_assess_smallfolk_decision_confirm:0 "Send them out"
+
+ wotsf_debug_add_suffering_decision:0 "DEBUG: Add 30 Suffering (Capital)"
+ wotsf_debug_add_suffering_decision_desc:0 "Testing tool. Adds 30 points of suffering to your capital county, enrolling it in the monthly pulse if it was clean.\n\nOnly visible while the #EMP Small Folk: Debug Mode#! game rule is on."
+ wotsf_debug_clear_suffering_decision:0 "DEBUG: Clear Suffering (Capital)"
+ wotsf_debug_clear_suffering_decision_desc:0 "Testing tool. Removes all suffering, band modifiers and the monthly pulse from your capital county.\n\nOnly visible while the #EMP Small Folk: Debug Mode#! game rule is on."
+ wotsf_debug_add_effect_tt:0 "#N Adds 30 suffering to your capital county, before intensity and winter.#!"
+ wotsf_debug_clear_effect_tt:0 "#N Wipes your capital county's suffering, its band modifier and its monthly pulse.#!"
+ wotsf_debug_add_suffering_decision_tooltip:0 "+30 suffering on your capital county."
+ wotsf_debug_add_suffering_decision_confirm:0 "Do it"
+ wotsf_debug_clear_suffering_decision_tooltip:0 "Wipes your capital county clean."
+ wotsf_debug_clear_suffering_decision_confirm:0 "Do it"
+
+ ### Game rules ##############################################################
+ game_rule_category_wotsf:0 "War of the Small Folk"
+
+ rule_wotsf_suffering_intensity:0 "Small Folk: Suffering Intensity"
+ setting_wotsf_intensity_disabled:0 "Disabled"
+ setting_wotsf_intensity_disabled_desc:0 "The system is off. No county accumulates suffering and no new modifier is applied.\n\nCounties already suffering keep their modifiers until their monthly pulse clears them."
+ setting_wotsf_intensity_soft:0 "Merciful"
+ setting_wotsf_intensity_soft_desc:0 "Every gain is halved. Recovery is unchanged.\n\nWar still marks the land, but a decade of peace erases it."
+ setting_wotsf_intensity_canon:0 "Canon"
+ setting_wotsf_intensity_canon_desc:0 "The intended balance. Sacking a county is the worst single thing that can be done to it; sieges and occupations grind it down month after month."
+ setting_wotsf_intensity_brutal:0 "Brutal"
+ setting_wotsf_intensity_brutal_desc:0 "Gains are increased by half and recovery is halved.\n\nThe Riverlands of the War of the Five Kings. A generation is not enough."
+
+ rule_wotsf_debug_mode:0 "Small Folk: Debug Mode"
+ setting_wotsf_debug_off:0 "Off"
+ setting_wotsf_debug_off_desc:0 "Normal play."
+ setting_wotsf_debug_on:0 "On"
+ setting_wotsf_debug_on_desc:0 "Unlocks the two testing decisions that add and clear suffering in your capital county.\n\nFor testing the mod, not for playing it."
+
+ ### Events ##################################################################
+ wotsf.0010.t:0 "The State of the Smallfolk"
+ wotsf.0010.desc:0 "Your stewards return with wax tablets and bad news, and your septons with worse.\n\n#EMP Restless fields:#! [ROOT.MakeScope.Var('wotsf_report_band1').GetValue|0] counties.\n#EMP Lands in pain:#! [ROOT.MakeScope.Var('wotsf_report_band2').GetValue|0] counties.\n#EMP Scorched earth:#! [ROOT.MakeScope.Var('wotsf_report_band3').GetValue|0] counties.\n\nCounties war has never touched are not counted. Neither are those that have healed.\n\n#EMP Suffering belongs to the land. Take a ruined county by the sword and you take its ruin with it.#!"
+ wotsf.0010.a:0 "The smallfolk endure. They always have."
+
+ ############################################################################
+ # PHASE 2 - CHEVAUCHEE
+ ############################################################################
+
+ ### Chevauchee modifiers ####################################################
+ wotsf_chevauchee_active_modifier:0 "Chevauchée"
+ wotsf_chevauchee_active_modifier_desc:0 "An enemy host is riding through this county with no intent to hold it. They burn the mills, drive off the herds and leave the wells fouled behind them."
+ wotsf_chevauchee_scorched_modifier:0 "Nothing Left to Burn"
+ wotsf_chevauchee_scorched_modifier_desc:0 "The riders have already been through. What could be carried is gone, what could not be carried is ash, and the people who worked this land are in the woods or in the ground. There is no profit here for another host, not this year."
+ wotsf_chevauchee_commander_modifier:0 "Laden with Plunder"
+ wotsf_chevauchee_commander_modifier_desc:0 "Every cart of grain and every stolen cow is one more thing to drag along the road. The host moves at the pace of its loot."
+ wotsf_chevauchee_clergy_modifier:0 "Burner of Fields"
+ wotsf_chevauchee_clergy_modifier_desc:0 "The septons preach against you by name. They ask, from the pulpit, which of the Seven blesses a man who starves children to win a war."
+ wotsf_defended_modifier:0 "Garrisoned Against Raiders"
+ wotsf_defended_modifier_desc:0 "Men-at-arms have been posted in the villages. They cannot stop a host, but they can make burning this county cost something."
+ wotsf_troops_diverted_modifier:0 "Troops Diverted"
+ wotsf_troops_diverted_modifier_desc:0 "Spears that should be standing in your battle line are standing in a wheat field instead."
+ wotsf_scourge_child_modifier:0 "Blood of the Scourge"
+ wotsf_scourge_child_modifier_desc:0 "Your father's name is spoken with a curse after it, and the curse does not stop at him."
+
+ ### Opinion #################################################################
+ wotsf_dishonour_opinion:0 "Makes war on peasants"
+ wotsf_ruthless_opinion:0 "Wages war without flinching"
+ wotsf_mercy_opinion:0 "Showed mercy to the smallfolk"
+ wotsf_broken_promise_opinion:0 "Broke a promise to me"
+ wotsf_spared_opinion:0 "Heard me when it cost something"
+ wotsf_humiliated_opinion:0 "Humiliated me before the host"
+
+ ### Trait ###################################################################
+ trait_wotsf_scourge:0 "Scourge of the Smallfolk"
+ trait_wotsf_scourge_desc:0 "Burned fields follow this character the way crows follow an army. Lords who would ride beside them in war will not sit at their table in peace, and the septons have stopped pretending otherwise.\n\n#EMP Ten years without another chevauchée, or a public penance, will let the smallfolk forget.#!"
+
+ ### Deaths ##################################################################
+ wotsf_death_insubordination:0 "was hanged for insubordination"
+ wotsf_death_insubordination_killer:0 "was hanged for insubordination on the order of [TARGET_CHARACTER.GetUIName]"
+
+ ### Interaction #############################################################
+ wotsf_chevauchee_interaction:0 "Order a Chevauchée"
+ wotsf_chevauchee_interaction_desc:0 "Loose your host on the county with orders to take nothing that cannot be carried and burn everything else. No sieges, no battles, no holding ground: mills, granaries, herds and crofts, and then the next village.\n\nIt will fill your coffers a little, break the county for a generation, and buy you a name you cannot give back.\n\n#EMP Three months. Your septons will hear of it, and so will your vassals.#!"
+ wotsf_forsworn_tt:0 "You have not sworn off burning fields"
+ wotsf_chevauchee_needs_army_tt:0 "You have an army standing in this county and not in battle"
+ wotsf_chevauchee_cooldown_tt:0 "This county has not been raided in the past six months"
+
+ ### Decisions ###############################################################
+ wotsf_penance_decision:0 "Do Penance for the Burned Fields"
+ wotsf_penance_decision_desc:0 "Walk to the sept without your sword. Confess the villages by name, if you can still remember them, and pay for the rebuilding out of your own coffers.\n\nThe smallfolk will not love you for it. They will only stop teaching their children to spit when they hear you named.\n\n#EMP Removes the Scourge of the Smallfolk trait.#!"
+ wotsf_compensate_lord_decision:0 "Keep Your Word to the Burned Lord"
+ wotsf_compensate_lord_decision_desc:0 "You promised justice once the war was done. The war is done, or near enough, and the man is still waiting.\n\nGold will not put his smallfolk back in the ground they came from, but it is what you have.\n\n#EMP Pays the debt before it becomes a grievance the whole realm remembers.#!"
+ wotsf_debug_force_chevauchee_decision:0 "DEBUG: Run a Chevauchée on Your Capital"
+ wotsf_debug_force_chevauchee_decision_desc:0 "Testing tool. Starts a three-month chevauchée on your own capital county with no war and no army, so the monthly tick, the plunder, the dread and the expiry can all be watched at once.\n\nOnly visible while the #EMP Small Folk: Debug Mode#! game rule is on."
+ wotsf_penance_decision_tooltip:0 "Buy back your name from the sept."
+ wotsf_penance_decision_confirm:0 "I will walk barefoot"
+ wotsf_compensate_lord_decision_tooltip:0 "Pay what you swore to pay."
+ wotsf_compensate_lord_decision_confirm:0 "My word is kept"
+ wotsf_debug_chevauchee_effect_tt:0 "#N Starts a three-month chevauchée on your capital county, with you as the commander.#!"
+ wotsf_debug_force_chevauchee_decision_tooltip:0 "Burns your own capital county for three months."
+ wotsf_debug_force_chevauchee_decision_confirm:0 "Do it"
+
+ ### Game rules ##############################################################
+ rule_wotsf_ai_chevauchee:0 "Small Folk: AI and the Chevauchée"
+ setting_wotsf_ai_chev_never:0 "Never"
+ setting_wotsf_ai_chev_never_desc:0 "The AI never burns fields. The tool stays in your hands alone."
+ setting_wotsf_ai_chev_cruel:0 "The Cruel Only"
+ setting_wotsf_ai_chev_cruel_desc:0 "Only callous, sadistic, ambitious or vengeful rulers will order a chevauchée, and never a compassionate or just one.\n\nThe intended balance: rare, and always a character telling you who they are."
+ setting_wotsf_ai_chev_aggressive:0 "Freely"
+ setting_wotsf_ai_chev_aggressive_desc:0 "Any ruler who is not compassionate or just will consider it, and will consider it often.\n\nA continent of burning fields. Choose this for the Riverlands, not for a long game."
+
+ ### Events ##################################################################
+ wotsf.0101.t:0 "The Knight Who Said Enough"
+ wotsf.0101.desc:0 "[wotsf_knight.GetUIName] does not wait to be announced. There is soot on [wotsf_knight.GetHerHis] surcoat and something worse on [wotsf_knight.GetHerHis] boots.\n\n\"Three times now,\" [wotsf_knight.GetHerHe] says. \"Three villages. I have killed men in your service and slept well after, because they were men and they were armed. This morning I pulled a girl out of a granary and she was not either.\"\n\nThe host is listening. That is the whole of the problem: the host is listening.\n\n\"Give the order to stop, my lord. Or find someone else to carry your banner.\""
+ wotsf.0101.a:0 "Enough. The order is given: no more burning."
+ wotsf.0101.a.compassionate:0 "You are right, and I have known it for three villages."
+ wotsf.0101.b:0 "Say that again where the whole host can hear you."
+ wotsf.0101.b.arrogant:0 "You mistake yourself for a man whose opinion I asked for."
+ wotsf.0101.c:0 "Hang him. Where the host can see."
+ wotsf.0101.c.sadistic:0 "Hang him slowly. A lesson wasted is a lesson twice."
+
+ wotsf.0201.t:0 "My Lord, the Fields Are Burning"
+ wotsf.0201.desc:0 "[wotsf_pleading_lord.GetUIName] has ridden through the night to reach you, and does not sit down.\n\n\"They are not besieging [chev_county.GetName], my lord. They are not trying to take it. They ride in, they fire the granaries, they kill anything that runs, and they ride out again before we can form up.\"\n\n[wotsf_pleading_lord.GetHerHe] puts something on the table. It is a fistful of scorched grain.\n\n\"This is what my smallfolk will be eating this winter. This, and each other.\""
+ wotsf.0201.a:0 "Post men in the villages. The county will hold."
+ wotsf.0201.b:0 "You will have justice when the war is won. My word on it."
+ wotsf.0201.c:0 "The war is decided in the field, not in your granaries."
+ wotsf.0201.c.callous:0 "Then they will learn what they are worth. Get out."
+
+ ### PHASE 3 - BROTHERHOODS ##################################################
+
+ wotsf_brotherhood_modifier:0 "A Brotherhood in the Woods"
+ wotsf_brotherhood_modifier_desc:0 "Men who lost everything have found each other, and one of them can give orders. They take from the roads and give a little of it back to the villages, which is why nobody will say where they sleep."
+ wotsf_brotherhood_strong_modifier:0 "The Brotherhood Holds the Roads"
+ wotsf_brotherhood_strong_modifier_desc:0 "They are not hiding any more. Your tax collectors travel with an escort or they do not travel, and the smallfolk have started using their leader's name the way they used to use yours."
+ wotsf_relief_modifier:0 "The Lord's Granaries Are Open"
+ wotsf_relief_modifier_desc:0 "Grain came up from the lowlands at your expense. They know it was bought and not given, and they are eating anyway."
+
+ wotsf_patron_exposed_opinion:0 "Paid outlaws to burn my lands"
+ wotsf_weakness_opinion:0 "Bargained with brigands"
+
+ wotsf_death_outlaw:0 "was hanged as an outlaw"
+ wotsf_death_outlaw_killer:0 "was hunted down and hanged on the order of [TARGET_CHARACTER.GetUIName]"
+
+ wotsf_secret_funding_outlaws:0 "Patron of Outlaws"
+ wotsf_secret_funding_outlaws_desc:0 "Is paying the brigands who burn [TARGET_CHARACTER.GetShortUIName]'s lands, and has never once been seen doing it."
+
+ wotsf_fund_brotherhood_interaction:0 "Fund the Brotherhood"
+ wotsf_fund_brotherhood_interaction_desc:0 "Somewhere in that county there are men with nothing left who have already learned to take what they need. They do not need to be told what to do. They need boots, arrowheads and a reason to believe that someone with a seal is on their side.\n\nThe purse goes out through three hands, and none of them will remember yours.\n\n#EMP Nobody is told. That is what makes it worth doing — and it is a secret, which means it is a thing that can be found.#!"
+ wotsf_fund_needs_brotherhood_tt:0 "There is a brotherhood at large in this county"
+ wotsf_fund_already_tt:0 "Nobody else is already paying them"
+
+ wotsf_hunt_brotherhood_decision:0 "Hunt Down the Brotherhood"
+ wotsf_hunt_brotherhood_decision_desc:0 "Send men into the hills after them. Riders, dogs, and a purse for whoever talks.\n\nThe trouble is that the county is on their side and the county knows the ground. Every farmer you question has been hungry for a year and remembers who fed him.\n\n#EMP Acts on the worst-afflicted county you hold. It is a roll, not a certainty: your martial skill and an army already standing there both help, and a large brotherhood is far harder to corner. Failing makes them stronger.#!"
+ wotsf_hunt_cooldown_tt:0 "You have not sent men into the hills within the past year"
+ wotsf_hunt_effect_tt:0 "Your riders go out after the brotherhood in your worst-afflicted county."
+ wotsf_relieve_county_decision:0 "Open the Granaries"
+ wotsf_relieve_county_decision_desc:0 "Buy grain from wherever it still grows and have it carted to the county that needs it most. Not charity — the men who cart it are paid, and the men who eat it will remember who paid for it.\n\n#EMP Acts on the worst-afflicted county you hold. Suffering drops directly, and unlike everything else in this mod the amount is not touched by the intensity rule or by winter: gold buys grain at the same rate in every season.#!"
+ wotsf_relief_cooldown_tt:0 "You have not opened the granaries within the past year"
+ wotsf_relief_effect_tt:0 "Grain reaches your worst-afflicted county, and the land begins to recover."
+ wotsf_treat_with_brotherhood_decision:0 "Treat with the Brotherhood"
+ wotsf_treat_with_brotherhood_decision_desc:0 "Send someone unarmed to the edge of the woods with an offer. Nobody hangs. The taking stops. What they have taken already stays taken.\n\nIt works, which is the awkward part. A lord who can end a rising by talking has told his vassals something about himself, and some of them will not like it.\n\n#EMP Ends the brotherhood in your worst-afflicted county outright and takes some suffering with it. Their leader may take service with you. Your proud, ambitious and brave vassals will think less of you.#!"
+ wotsf_treat_effect_tt:0 "The brotherhood disperses, and the county breathes."
+ wotsf_debug_spawn_brotherhood_decision:0 "DEBUG: Raise a Brotherhood"
+ wotsf_debug_spawn_brotherhood_decision_desc:0 "Testing only. Enrols your capital county if it is clean, then raises a brotherhood there at once, skipping the Scorched Earth requirement and the monthly roll. The world cap of eight is still respected."
+ wotsf_debug_spawn_ready_tt:0 "Your capital county has no brotherhood and the world is under the cap"
+ wotsf_debug_spawn_effect_tt:0 "A brotherhood rises in your capital county."
+
+ rule_wotsf_brotherhoods:0 "Small Folk: Brotherhoods"
+ setting_wotsf_brotherhoods_off:0 "None"
+ setting_wotsf_brotherhoods_off_desc:0 "No county ever raises outlaws. Suffering stays a number on the land and nothing walks out of it.\n\nBands that already exist in an ongoing save still run out their lives normally, so this is safe to switch on mid-game."
+ setting_wotsf_brotherhoods_normal:0 "As Written"
+ setting_wotsf_brotherhoods_normal_desc:0 "A county left at Scorched Earth will raise a brotherhood in about half a year. Eight may exist in the world at once.\n\nSlow enough that healing the county is a real alternative to hunting them."
+ setting_wotsf_brotherhoods_frequent:0 "The Riverlands"
+ setting_wotsf_brotherhoods_frequent_desc:0 "Outlaws rise two and a half times as readily. The world cap of eight still holds, so this mostly decides how fast it is reached.\n\nChoose this for a war-torn continent, or for testing."
+
+ wotsf.0301.t:0 "Banners in the Woods"
+ wotsf.0301.desc:0 "The first your steward hears of it is a tax cart that arrives empty, with the driver alive and unhurt and very careful about what he says.\n\n\"They took the grain and left the horses, my lord. They said the horses belonged to the county.\"\n\nIn [wotsf_band_county.GetName] the war has been over for no one. Men who lost a croft, a wife or an arm to somebody's host have found each other in the treeline, and one of them — [wotsf_band_leader.GetUIName] — turns out to be able to make the rest stand still and listen.\n\nThey have no banner. That is rather the point."
+ wotsf.0301.a:0 "Every war leaves men in the woods. This one will pass."
+ wotsf.0301.b:0 "Then the county can starve until it gives them up."
+ wotsf.0302.t:0 "The Tax Cart"
+ wotsf.0302.desc:0 "They took it on the road out of [wotsf_band_county.GetName], between the ford and the mill, and they were gone before the escort had finished falling off their horses.\n\nYour serjeant is furious and unwounded, which tells you most of what happened. Nobody was killed. Nobody is ever killed. That is how they keep the villages quiet: a brotherhood that murders men from the county stops being the county's.\n\nThe money is gone all the same."
+ wotsf.0302.a:0 "Count what is left and say nothing. A robbed lord is a lord who lost."
+ wotsf.0303.t:0 "They Have a Name Now"
+ wotsf.0303.desc:0 "A singer at your own table gets three verses in before he works out whose hall he is standing in.\n\nThe song is about [wotsf_band_leader.GetUIName]. In it [wotsf_band_leader.GetHerHe] gives a widow back her plough-ox and hangs a tax collector, in that order, and the crowd in the song is cheering.\n\nThis is where it stops being a nuisance. The roads out of [wotsf_band_county.GetName] are theirs after dark, your writ runs to the treeline and no further, and boys from three counties over are walking to the woods to find them.\n\nThe singer has gone very pale."
+ wotsf.0303.a:0 "A song is not a rebellion. Not yet."
+ wotsf.0303.b:0 "Hang the singer. The song will die with him."
+ wotsf.0304.t:0 "Three Hands Were Not Enough"
+ wotsf.0304.desc:0 "The purse went out through a merchant, and the merchant used a factor, and the factor talked to somebody who wrote it down.\n\nIt is written down now in a hand you do not recognise, on a table in front of [secret_target.GetUIName], with your own seal at the foot of it. There is no version of this that is a misunderstanding.\n\nYou paid brigands to burn another lord's fields. Half the lords in the realm have wanted to. All of them know that the only difference between them and you is that they did not."
+ wotsf.0304.a:0 "Then let them say it to my face."
+ wotsf.0304.b:0 "There is nothing I can say that makes this smaller."
+ wotsf.0401.t:0 "The Hunt"
+ wotsf.0401.desc.win:0 "They caught them at a crofter's steading before dawn, which means somebody talked — for the purse, or for a grudge, or because his own brother was in the band and he wanted him alive.\n\nIt was not a battle. It lasted the length of a shouted order.\n\nThe leader was hanged where the road out of the county can see it, and the body was left up. Half the people who come to look are relieved. The other half are counting, and there is no way to tell which is which."
+ wotsf.0401.desc.fail:0 "Your riders were in the hills for eleven days and found four cold campfires, a cave with fresh straw in it, and nobody at all.\n\nEvery farmer they questioned had been hungry for a year and had a face made of wood. One of them offered your serjeant bread. Your serjeant took it.\n\nThe purse is spent, the county has watched its lord fail to find men who live in it, and tonight there will be more of them than there were this morning."
+ wotsf.0401.a:0 "So it goes."

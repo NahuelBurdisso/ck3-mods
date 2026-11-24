@@ -1,0 +1,392 @@
+﻿namespace = wotsf
+
+############################################################################
+# wotsf.0101 - THE KNIGHT WHO SAID ENOUGH
+#
+# Fired from wotsf_chevauchee_interaction three days after the third
+# chevauchee against the same opponent (design 3.2). root = the perpetrator.
+#
+# The counter is keyed to the opponent rather than to the war: scope:war
+# cannot be stored, because the war object is destroyed at war end and the
+# reference would dangle.
+############################################################################
+
+wotsf.0101 = {
+	type = character_event
+	title = wotsf.0101.t
+	desc = wotsf.0101.desc
+	theme = war
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+	right_portrait = {
+		character = scope:wotsf_knight
+		animation = disapproval
+	}
+
+	trigger = {
+		wotsf_system_enabled_trigger = yes
+		any_knight = {
+			is_alive = yes
+			OR = {
+				has_trait = compassionate
+				has_trait = honest
+				has_trait = just
+			}
+		}
+	}
+
+	immediate = {
+		random_knight = {
+			limit = {
+				is_alive = yes
+				OR = {
+					has_trait = compassionate
+					has_trait = honest
+					has_trait = just
+				}
+			}
+			save_scope_as = wotsf_knight
+		}
+		debug_log = "WOTSF: confrontation"
+	}
+
+	# (a) Stop. Costs you the pressure the burning was buying.
+	option = {
+		name = {
+			trigger = { has_trait = compassionate }
+			text = wotsf.0101.a.compassionate
+		}
+		name = wotsf.0101.a
+
+		add_character_flag = {
+			flag = wotsf_forsworn_chevauchee
+			years = 10
+		}
+		add_piety = 100
+		scope:wotsf_knight = {
+			add_opinion = {
+				modifier = wotsf_spared_opinion
+				target = root
+			}
+		}
+		every_vassal = {
+			add_opinion = {
+				modifier = wotsf_mercy_opinion
+				target = root
+			}
+		}
+		stress_impact = {
+			callous = medium_stress_impact_gain
+			sadistic = medium_stress_impact_gain
+		}
+	}
+
+	# (b) Keep burning, and break him in front of the host.
+	option = {
+		name = {
+			trigger = { has_trait = arrogant }
+			text = wotsf.0101.b.arrogant
+		}
+		name = wotsf.0101.b
+
+		add_dread = 10
+		scope:wotsf_knight = {
+			add_opinion = {
+				modifier = wotsf_humiliated_opinion
+				target = root
+			}
+		}
+		# Two in five walk out of the host rather than serve on.
+		random_list = {
+			60 = {
+			}
+			40 = {
+				root = {
+					remove_courtier_or_guest = scope:wotsf_knight
+				}
+			}
+		}
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+			just = medium_stress_impact_gain
+		}
+	}
+
+	# (c) Hang him for insubordination.
+	option = {
+		name = {
+			trigger = { has_trait = sadistic }
+			text = wotsf.0101.c.sadistic
+		}
+		name = wotsf.0101.c
+
+		add_dread = 25
+		if = {
+			limit = { NOT = { has_trait = wotsf_scourge } }
+			wotsf_grant_scourge_effect = yes
+		}
+		scope:wotsf_knight = {
+			death = {
+				killer = root
+				death_reason = wotsf_death_insubordination
+			}
+		}
+		every_vassal = {
+			add_opinion = {
+				modifier = wotsf_dishonour_opinion
+				target = root
+			}
+			add_opinion = {
+				modifier = wotsf_dishonour_opinion
+				target = root
+			}
+		}
+		stress_impact = {
+			compassionate = major_stress_impact_gain
+			just = major_stress_impact_gain
+			honest = medium_stress_impact_gain
+		}
+	}
+}
+
+############################################################################
+# wotsf.0201 - "MY LORD, THE FIELDS ARE BURNING"
+#
+# Fired at the defending ruler five days after the first chevauchee they
+# suffer in a five-year window (design 3.4). scope:chev_county = the county,
+# scope:chev_actor = whoever ordered it.
+#
+# Option (a) is the redesign approved on 2026-08-27: there is no effect in
+# 1.19 that removes men from a raised army, so diverting troops shows up as a
+# garrison in the county and a levy penalty on the ruler.
+############################################################################
+
+wotsf.0201 = {
+	type = character_event
+	title = wotsf.0201.t
+	desc = wotsf.0201.desc
+	theme = war
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+	right_portrait = {
+		character = scope:wotsf_pleading_lord
+		animation = grief
+	}
+
+	trigger = {
+		wotsf_system_enabled_trigger = yes
+		exists = scope:chev_county
+		scope:chev_county = { exists = holder }
+	}
+
+	immediate = {
+		# Usually the county's own lord rides in to beg. When the burning county
+		# is one root holds directly there is nobody to plead, and a ruler
+		# pleading with himself reads as nonsense, so the steward carries it.
+		if = {
+			limit = { scope:chev_county.holder ?= root }
+			if = {
+				limit = { exists = cp:councillor_steward }
+				cp:councillor_steward = { save_scope_as = wotsf_pleading_lord }
+			}
+			else_if = {
+				limit = { any_courtier = { is_adult = yes } }
+				random_courtier = {
+					limit = { is_adult = yes }
+					save_scope_as = wotsf_pleading_lord
+				}
+			}
+			else = {
+				save_scope_as = wotsf_pleading_lord
+			}
+		}
+		else = {
+			scope:chev_county.holder = {
+				save_scope_as = wotsf_pleading_lord
+			}
+		}
+		debug_log = "WOTSF: defender plea"
+	}
+
+	# (a) Post men there. The county holds; your levies thin out.
+	option = {
+		name = wotsf.0201.a
+
+		scope:chev_county = {
+			add_county_modifier = {
+				modifier = wotsf_defended_modifier
+				years = 2
+			}
+		}
+		add_character_modifier = {
+			modifier = wotsf_troops_diverted_modifier
+			years = 2
+		}
+		if = {
+			limit = { scope:wotsf_pleading_lord != root }
+			scope:wotsf_pleading_lord = {
+				add_opinion = {
+					modifier = wotsf_mercy_opinion
+					target = root
+				}
+			}
+		}
+	}
+
+	# (b) Promise justice once the war is done. Two years to keep your word.
+	option = {
+		name = wotsf.0201.b
+
+		# Nobody is owed anything if the man who pleaded is you. That only
+		# happens in the fallback case where root holds the county directly and
+		# has no steward and no adult courtier to send.
+		if = {
+			limit = { scope:wotsf_pleading_lord != root }
+			add_character_flag = {
+				flag = wotsf_promise_pending
+				years = 3
+			}
+			set_variable = {
+				name = wotsf_promised_lord
+				value = scope:wotsf_pleading_lord
+				years = 3
+			}
+			trigger_event = { id = wotsf.0202 years = 2 }
+		}
+		stress_impact = {
+			honest = minor_stress_impact_gain
+		}
+	}
+
+	# (c) Nothing. The county learns exactly what it is worth.
+	option = {
+		name = {
+			trigger = { has_trait = callous }
+			text = wotsf.0201.c.callous
+		}
+		name = wotsf.0201.c
+
+		scope:chev_county = {
+			wotsf_add_suffering_effect = { AMOUNT = 5 }
+		}
+		if = {
+			limit = { scope:wotsf_pleading_lord != root }
+			scope:wotsf_pleading_lord = {
+				add_opinion = {
+					modifier = wotsf_dishonour_opinion
+					target = root
+				}
+				add_opinion = {
+					modifier = wotsf_dishonour_opinion
+					target = root
+				}
+			}
+		}
+		stress_impact = {
+			compassionate = medium_stress_impact_gain
+			just = medium_stress_impact_gain
+		}
+	}
+}
+
+############################################################################
+# wotsf.0202 - THE PROMISE COMES DUE        hidden, two years after 0201
+#
+# The flag is cleared by wotsf_compensate_lord_decision. If it is still here,
+# every lesser lord in the realm heard that the word of their liege is worth
+# nothing.
+############################################################################
+
+wotsf.0202 = {
+	hidden = yes
+	scope = character
+
+	trigger = {
+		has_character_flag = wotsf_promise_pending
+	}
+
+	immediate = {
+		remove_character_flag = wotsf_promise_pending
+		remove_variable = wotsf_promised_lord
+		every_vassal = {
+			# `tier` is landed_title-scoped. The character-scope equivalent is
+			# highest_held_title_tier; `tier` here logged
+			# "Inconsistent trigger scopes (character vs. landed_title)".
+			limit = { highest_held_title_tier <= tier_county }
+			add_opinion = {
+				modifier = wotsf_broken_promise_opinion
+				target = root
+			}
+		}
+		debug_log = "WOTSF: promise broken"
+	}
+}
+
+############################################################################
+# wotsf.0120 - THE SCOURGE FORGETS         hidden, from on_birthday
+# wotsf.0121 - A CHILD OF THE SCOURGE      hidden, from on_birth_child
+# wotsf.0122 - THE SCOURGE DIES            hidden, from on_death
+#
+# Design 3.3: the reputation is hereditary while the man lives, and ten years
+# of restraint undo it. One variable read per scourge per year; every other
+# character in the world fails the trigger and stops.
+############################################################################
+
+wotsf.0120 = {
+	hidden = yes
+	scope = character
+
+	trigger = {
+		has_trait = wotsf_scourge
+	}
+
+	immediate = {
+		if = {
+			limit = { has_variable = wotsf_scourge_grace }
+			change_variable = { name = wotsf_scourge_grace subtract = 1 }
+		}
+		if = {
+			limit = { wotsf_scourge_lapsed_trigger = yes }
+			wotsf_remove_scourge_effect = yes
+		}
+	}
+}
+
+wotsf.0121 = {
+	hidden = yes
+	scope = character
+
+	trigger = {
+		OR = {
+			scope:father ?= { has_trait = wotsf_scourge }
+			scope:mother ?= { has_trait = wotsf_scourge }
+		}
+	}
+
+	immediate = {
+		wotsf_mark_scourge_child_effect = yes
+		debug_log = "WOTSF: scourge child born"
+	}
+}
+
+wotsf.0122 = {
+	hidden = yes
+	scope = character
+
+	trigger = {
+		has_trait = wotsf_scourge
+	}
+
+	immediate = {
+		every_child = {
+			wotsf_unmark_scourge_child_effect = yes
+		}
+		debug_log = "WOTSF: scourge dead"
+	}
+}

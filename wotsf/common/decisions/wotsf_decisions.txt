@@ -1,0 +1,528 @@
+﻿# AGOT: War of the Small Folk - decisions
+#
+# New keys only, so nothing of vanilla's or AGOT's decision list is replaced.
+# The two debug decisions are gated behind the wotsf_debug_mode game rule and
+# are the ONLY supported way to inject suffering by hand: the CK3 console
+# rejects `effect = { ... }` ("effect is empty") and fails silently in every
+# log, so a console effect is not a usable test path.
+
+### The report ###############################################################
+
+wotsf_assess_smallfolk_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 120
+
+	is_shown = {
+		wotsf_system_enabled_trigger = yes
+		is_landed = yes
+		any_held_title = {
+			tier = tier_county
+		}
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = wotsf_assess_cooldown_tt
+			NOT = { has_character_flag = wotsf_assess_cooldown }
+		}
+	}
+
+	# CK3 builds an effect tooltip by running the effect in tooltip mode, so a
+	# bare flag or variable line leaks its internal name to the player. Every
+	# effect in this file therefore says what it does in one sentence and hides
+	# the machinery.
+	effect = {
+		custom_tooltip = wotsf_assess_effect_tt
+		hidden_effect = {
+			add_character_flag = {
+				flag = wotsf_assess_cooldown
+				years = 1
+			}
+			trigger_event = wotsf.0010
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+### Chevauchee aftermath (phase 2) ###########################################
+
+# Design 3.3: the reputation can be bought back, once, at a price that hurts.
+# The ten-year lapse in wotsf.0120 is the free path; this is the fast one.
+wotsf_penance_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 60
+
+	is_shown = {
+		has_trait = wotsf_scourge
+	}
+
+	is_valid = {
+		is_landed = yes
+		is_imprisoned = no
+	}
+
+	cost = {
+		piety = {
+			value = 300
+		}
+		gold = {
+			value = 150
+		}
+	}
+
+	# Losing the trait is the whole point and belongs in the tooltip; the grace
+	# variable and the children's modifiers behind it do not.
+	effect = {
+		show_as_tooltip = {
+			remove_trait = wotsf_scourge
+		}
+		hidden_effect = {
+			wotsf_remove_scourge_effect = yes
+		}
+		every_vassal = {
+			limit = {
+				OR = {
+					has_trait = compassionate
+					has_trait = just
+				}
+			}
+			add_opinion = {
+				modifier = wotsf_mercy_opinion
+				target = root
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 50
+	}
+}
+
+# The promise of wotsf.0201 option (b), kept. Clears the flag, which is what
+# wotsf.0202 tests, so the broken-promise penalty never lands.
+wotsf_compensate_lord_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 12
+
+	is_shown = {
+		has_character_flag = wotsf_promise_pending
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = wotsf_promised_lord_tt
+			exists = var:wotsf_promised_lord
+		}
+	}
+
+	cost = {
+		gold = {
+			value = 150
+		}
+	}
+
+	# The gold, the opinion and the prestige are worth showing; the flag and
+	# the variable are not.
+	effect = {
+		hidden_effect = {
+			remove_character_flag = wotsf_promise_pending
+		}
+		var:wotsf_promised_lord = {
+			add_gold = 100
+			add_opinion = {
+				modifier = wotsf_spared_opinion
+				target = root
+			}
+		}
+		hidden_effect = {
+			remove_variable = wotsf_promised_lord
+		}
+		add_prestige = 50
+	}
+
+	ai_will_do = {
+		base = 60
+	}
+}
+
+### Brotherhoods (phase 3) ###################################################
+#
+# All three act on the WORST affected county you hold, not on one you pick.
+# There is no dynamic county picker in a decision: the option-list widget
+# (decision_view_widget_option_list_generic) takes statically declared items,
+# not a title list, and the Phase 2 interaction trick does not apply because
+# these are your own counties, not somebody else's domain.
+#
+# So each one resolves with ordered_held_title ordered by suffering,
+# position = 0, and the loc names the county so the player is never guessing.
+
+# Ride them down. A roll, not a certainty - see wotsf_brotherhood_hunt_odds.
+wotsf_hunt_brotherhood_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_siege_warfare.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 12
+
+	is_shown = {
+		wotsf_system_enabled_trigger = yes
+		is_landed = yes
+		wotsf_holder_has_brotherhood_trigger = yes
+	}
+
+	is_valid = {
+		is_imprisoned = no
+		custom_tooltip = {
+			text = wotsf_hunt_cooldown_tt
+			NOT = { has_character_flag = wotsf_hunt_cooldown }
+		}
+	}
+
+	cost = {
+		gold = {
+			value = 150
+		}
+	}
+
+	effect = {
+		custom_tooltip = wotsf_hunt_effect_tt
+		hidden_effect = {
+			ordered_held_title = {
+				limit = {
+					tier = tier_county
+					wotsf_county_brotherhood_active_trigger = yes
+				}
+				order_by = wotsf_county_suffering_value
+				position = 0
+				save_scope_as = wotsf_hunt_county
+			}
+			add_character_flag = {
+				flag = wotsf_hunt_cooldown
+				years = 1
+			}
+			trigger_event = wotsf.0401
+		}
+	}
+
+	ai_will_do = {
+		base = 60
+	}
+}
+
+# Address the cause. Costs gold, buys suffering down directly, and works on
+# any hurt county whether or not outlaws have risen there yet - which makes it
+# the cheap answer if you take it early and the expensive one if you wait.
+wotsf_relieve_county_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 12
+
+	is_shown = {
+		wotsf_system_enabled_trigger = yes
+		is_landed = yes
+		wotsf_holder_has_hurt_county_trigger = yes
+	}
+
+	is_valid = {
+		is_imprisoned = no
+		custom_tooltip = {
+			text = wotsf_relief_cooldown_tt
+			NOT = { has_character_flag = wotsf_relief_cooldown }
+		}
+	}
+
+	cost = {
+		gold = {
+			value = 150
+		}
+	}
+
+	effect = {
+		custom_tooltip = wotsf_relief_effect_tt
+		hidden_effect = {
+			ordered_held_title = {
+				limit = {
+					tier = tier_county
+					has_variable = wotsf_band
+					var:wotsf_band >= 1
+				}
+				order_by = wotsf_county_suffering_value
+				position = 0
+
+				add_county_modifier = {
+					modifier = wotsf_relief_modifier
+					years = 2
+				}
+				# Relief is flat: not multiplied by intensity or by winter.
+				# See the note on wotsf_relieve_suffering_effect.
+				wotsf_relieve_suffering_effect = { AMOUNT = 25 }
+			}
+			add_character_flag = {
+				flag = wotsf_relief_cooldown
+				years = 1
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 40
+	}
+}
+
+# Treat with them. Ends the band without a fight and takes ten suffering with
+# it, because a lord who negotiates has to concede something the smallfolk can
+# eat. The proud in your realm will hear about it.
+wotsf_treat_with_brotherhood_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 12
+
+	is_shown = {
+		wotsf_system_enabled_trigger = yes
+		is_landed = yes
+		wotsf_holder_has_brotherhood_trigger = yes
+	}
+
+	is_valid = {
+		is_imprisoned = no
+	}
+
+	cost = {
+		piety = {
+			value = 150
+		}
+	}
+
+	effect = {
+		custom_tooltip = wotsf_treat_effect_tt
+		hidden_effect = {
+			ordered_held_title = {
+				limit = {
+					tier = tier_county
+					wotsf_county_brotherhood_active_trigger = yes
+				}
+				order_by = wotsf_county_suffering_value
+				position = 0
+				save_scope_as = wotsf_treat_county
+
+				if = {
+					limit = { NOT = { wotsf_brotherhood_leader_gone_trigger = yes } }
+					var:wotsf_brotherhood_leader = {
+						save_scope_as = wotsf_treat_leader
+					}
+				}
+
+				wotsf_relieve_suffering_effect = { AMOUNT = 10 }
+				wotsf_end_brotherhood_effect = yes
+			}
+
+			# Half of them will take service. The other half walk back into
+			# the woods, which is the outcome the loc describes as the honest
+			# one - nobody in this mod is obliged to be redeemable.
+			if = {
+				limit = { exists = scope:wotsf_treat_leader }
+				random = {
+					chance = 50
+					add_courtier = scope:wotsf_treat_leader
+				}
+			}
+
+			every_vassal = {
+				limit = {
+					OR = {
+						has_trait = arrogant
+						has_trait = ambitious
+						has_trait = brave
+					}
+				}
+				add_opinion = {
+					modifier = wotsf_weakness_opinion
+					target = root
+				}
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 20
+	}
+}
+
+### Debug ####################################################################
+#
+# These three vanished from the game on 2026-08-27 and the is_shown triggers
+# were not the reason: `picture = "gfx/..."` is not valid in 1.19 (it is a
+# block), the parser broke on the first decision in this file and every key
+# after it was orphaned. Nothing below the first decision loaded at all.
+
+# Adds 30 suffering to the capital county, enrolling it if it was clean.
+wotsf_debug_add_suffering_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 120
+
+	is_shown = {
+		wotsf_debug_enabled_trigger = yes
+		is_landed = yes
+		exists = capital_county
+	}
+
+	is_valid = {
+		capital_county = {
+			wotsf_county_valid_trigger = yes
+		}
+	}
+
+	effect = {
+		custom_tooltip = wotsf_debug_add_effect_tt
+		hidden_effect = {
+			capital_county = {
+				wotsf_add_suffering_effect = { AMOUNT = 30 }
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+# Wipes the capital county's suffering, modifiers and pulse.
+wotsf_debug_clear_suffering_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_misc.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 120
+
+	is_shown = {
+		wotsf_debug_enabled_trigger = yes
+		is_landed = yes
+		exists = capital_county
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = wotsf_capital_suffering_tt
+			capital_county = {
+				wotsf_county_pulse_active_trigger = yes
+			}
+		}
+	}
+
+	effect = {
+		custom_tooltip = wotsf_debug_clear_effect_tt
+		hidden_effect = {
+			capital_county = {
+				wotsf_clear_county_effect = yes
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+# Runs a chevauchee on your OWN capital county, with no war and no army. The
+# per-opponent counter is not touched (there is no opponent), so this tests the
+# monthly tick, the gold, the dread and the expiry, not the wotsf.0101 chain.
+wotsf_debug_force_chevauchee_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_siege_warfare.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 120
+
+	is_shown = {
+		wotsf_debug_enabled_trigger = yes
+		is_landed = yes
+		exists = capital_county
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = wotsf_capital_chevauchee_ready_tt
+			capital_county = {
+				wotsf_county_valid_trigger = yes
+				wotsf_county_chevauchee_ready_trigger = yes
+			}
+		}
+	}
+
+	effect = {
+		custom_tooltip = wotsf_debug_chevauchee_effect_tt
+		hidden_effect = {
+			save_scope_as = chev_actor
+			capital_county = {
+				wotsf_start_chevauchee_effect = yes
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}
+
+# Raises a brotherhood in your own capital county immediately, skipping the
+# band-3 gate and the 12% monthly roll. It still respects the world cap, so a
+# game already at eight will do nothing and say so.
+wotsf_debug_spawn_brotherhood_decision = {
+	picture = {
+		reference = "gfx/interface/illustrations/decisions/decision_siege_warfare.dds"
+	}
+	decision_group_type = decisions
+	ai_check_interval = 120
+
+	is_shown = {
+		wotsf_debug_enabled_trigger = yes
+		is_landed = yes
+		exists = capital_county
+	}
+
+	is_valid = {
+		custom_tooltip = {
+			text = wotsf_debug_spawn_ready_tt
+			capital_county = {
+				wotsf_county_valid_trigger = yes
+				NOT = { wotsf_county_brotherhood_active_trigger = yes }
+				wotsf_brotherhood_world_room_trigger = yes
+			}
+		}
+	}
+
+	effect = {
+		custom_tooltip = wotsf_debug_spawn_effect_tt
+		hidden_effect = {
+			capital_county = {
+				# The band needs a county that is already on the pulse, or the
+				# tick that grows it will never run.
+				wotsf_enroll_county_effect = yes
+				wotsf_spawn_brotherhood_effect = yes
+			}
+		}
+	}
+
+	ai_will_do = {
+		base = 0
+	}
+}

@@ -1,0 +1,130 @@
+﻿# AGOT: War of the Small Folk - county modifiers
+# The three suffering bands. Applied and stripped by wotsf_set_band_*_effect,
+# never by hand, and never more than one at a time: two different county
+# modifiers STACK, where re-adding the same one only refreshes it.
+#
+# Band thresholds (wotsf_suffering, 0-100):
+#   band 1  25-49  wotsf_suffering_1_modifier   "Campos inquietos"
+#   band 2  50-74  wotsf_suffering_2_modifier   "Tierra doliente"
+#   band 3  75-100 wotsf_suffering_3_modifier   "Tierra quemada"
+#
+# Every key below is confirmed county-area in docs/api/1.19.0.6/modifiers.log.
+
+wotsf_suffering_1_modifier = {
+	icon = county_modifier_development_negative
+	tax_mult = -0.1
+	levy_size = -0.1
+}
+
+wotsf_suffering_2_modifier = {
+	icon = county_modifier_development_negative
+	tax_mult = -0.25
+	levy_size = -0.25
+	development_growth_factor = -0.5
+}
+
+wotsf_suffering_3_modifier = {
+	icon = county_modifier_development_negative
+	tax_mult = -0.5
+	levy_size = -0.6
+	development_growth = -0.2
+	monthly_county_control_growth_add = -0.3
+}
+
+############################################################################
+# PHASE 2 - CHEVAUCHEE
+#
+# The chevauchee itself is county state, not army state: add_army_modifier
+# does not exist in 1.19. The county modifier is the visible marker, and
+# wotsf_chevauchee_months is what the monthly pulse counts down.
+#
+# Every modifier here is applied with an explicit duration, so none of them
+# can leak if a variable is ever lost.
+############################################################################
+
+wotsf_chevauchee_active_modifier = {
+	icon = county_modifier_control_negative
+	development_growth_factor = -0.5
+	county_opinion_add = -20
+}
+
+# THIS MODIFIER *IS* THE 6-MONTH COOLDOWN. Its presence is the entire check in
+# wotsf_county_chevauchee_ready_trigger, and its duration is the only clock -
+# nothing counts it down, the engine expires it. No stat effects on purpose: it
+# is a gate and a piece of information, not a penalty, and the suffering bands
+# are already doing the hurting. Icon-only modifiers are a normal vanilla shape
+# (00_county_modifiers.txt: reclaim_britannia_culture_modifier).
+wotsf_chevauchee_scorched_modifier = {
+	icon = county_modifier_development_negative
+}
+
+# On the commander. They are busy burning, not marching.
+wotsf_chevauchee_commander_modifier = {
+	icon = travel_negative
+	movement_speed = -0.25
+}
+
+# On the perpetrator. Refreshed, not stacked, by every new chevauchee.
+wotsf_chevauchee_clergy_modifier = {
+	icon = piety_negative
+	clergy_opinion = -10
+}
+
+# The defender chose to garrison the county (design 3.4a, redesigned:
+# there is no effect in 1.19 that removes men from a raised army).
+wotsf_defended_modifier = {
+	icon = county_modifier_control_positive
+	county_opinion_add = 15
+	monthly_county_control_growth_add = 0.1
+}
+
+wotsf_troops_diverted_modifier = {
+	icon = martial_negative
+	levy_size = -0.15
+	levy_reinforcement_rate = -0.25
+}
+
+# "Son of the Scourge". Applied to the children of a wotsf_scourge holder,
+# stripped from all of them when the parent dies.
+wotsf_scourge_child_modifier = {
+	icon = diplomacy_negative
+	general_opinion = -5
+}
+
+############################################################################
+# PHASE 3 - BROTHERHOODS
+#
+# Modifier values are static, so wotsf_brotherhood_strength cannot drive one
+# modifier's numbers. Two tiers instead, exactly one at a time, siblings
+# stripped before the new one is added - the same shape as the suffering
+# bands, and for the same reason: two different county modifiers STACK.
+#
+# THESE TWO CARRY NO DURATION, unlike every Phase 2 modifier. The band is
+# alive until something kills it, so there is no honest number to put here.
+# That makes wotsf_end_brotherhood_effect the only thing that removes them,
+# and every exit path has to go through it or the modifier is permanent.
+# See R16 in the Phase 3 plan.
+############################################################################
+
+wotsf_brotherhood_modifier = {
+	icon = county_modifier_control_negative
+	tax_mult = -0.2
+	monthly_county_control_growth_add = -0.25
+	county_opinion_add = -15
+}
+
+wotsf_brotherhood_strong_modifier = {
+	icon = county_modifier_control_negative
+	tax_mult = -0.35
+	levy_size = -0.2
+	monthly_county_control_growth_add = -0.5
+	county_opinion_add = -25
+}
+
+# The lord opened his stores. Bought with gold, not with mercy, and the
+# smallfolk can tell the difference - but they eat either way.
+wotsf_relief_modifier = {
+	icon = county_modifier_control_positive
+	county_opinion_add = 10
+	monthly_county_control_growth_add = 0.1
+}

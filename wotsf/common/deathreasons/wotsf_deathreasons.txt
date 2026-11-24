@@ -1,0 +1,16 @@
+﻿# AGOT: War of the Small Folk - death reasons
+#
+# Used by wotsf.0101 option (c): the knight who told his lord to stop burning
+# villages, hanged for insubordination in front of the host.
+
+wotsf_death_insubordination = {
+	public_knowledge = yes
+	icon = "death_murder.dds"
+}
+
+# Used by wotsf.0401: the brotherhood leader run down and hanged at the end of
+# a successful hunt.
+wotsf_death_outlaw = {
+	public_knowledge = yes
+	icon = "death_murder.dds"
+}

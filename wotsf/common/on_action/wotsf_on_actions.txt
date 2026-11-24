@@ -1,0 +1,83 @@
+﻿# AGOT: War of the Small Folk - on_action hooks
+#
+# ADDITIVE ONLY. `events = { }` lists MERGE across mods; `effect = { }` does
+# NOT - the engine keeps exactly one and picks it by alphabetical filename, so
+# writing an effect block on a shared hook silently deletes AGOT's. Nothing
+# here declares an effect, a trigger or a random_events block.
+#
+# Scopes below are the vanilla ones (game/common/on_action/army_on_actions.txt):
+#   on_army_monthly            root = army owner,  scope:army
+#   on_siege_completion        root = occupier,    scope:county
+#   on_county_occupied         root = occupier,    scope:county
+#   on_raid_action_completion  root = raider army, scope:county
+
+on_army_monthly = {
+	events = {
+		wotsf.0002
+	}
+}
+
+on_siege_completion = {
+	events = {
+		wotsf.0003
+	}
+}
+
+on_county_occupied = {
+	events = {
+		wotsf.0004
+	}
+}
+
+on_raid_action_completion = {
+	events = {
+		wotsf.0005
+	}
+}
+
+### The Scourge (phase 2) ####################################################
+#
+# Routed through private sub-on_actions rather than adding an events list
+# straight onto the vanilla keys. This is the pattern AGOT itself uses on
+# on_birthday (agot_knight_on_actions.txt:15) and on_death
+# (agot_ub_on_actions.txt:7), so it is proven to merge in this playset.
+#
+#   on_birthday      root = the character, after the age tick
+#   on_birth_child   root = the newborn, scope:mother / scope:father
+#   on_death         root = the character about to die
+
+on_birthday = {
+	on_actions = {
+		wotsf_on_birthday
+	}
+}
+
+wotsf_on_birthday = {
+	events = {
+		wotsf.0120
+	}
+}
+
+on_birth_child = {
+	on_actions = {
+		wotsf_on_birth_child
+	}
+}
+
+wotsf_on_birth_child = {
+	events = {
+		wotsf.0121
+	}
+}
+
+on_death = {
+	on_actions = {
+		wotsf_on_death
+	}
+}
+
+wotsf_on_death = {
+	events = {
+		wotsf.0122
+	}
+}

@@ -1,0 +1,248 @@
+﻿# AGOT: War of the Small Folk - script values
+#
+# Bare `value = X` in every branch with no base value outside is shipped vanilla
+# (recent_epidemics_outbreak_mult_value, 06_ce1_epidemics_values.txt).
+
+# Multiplies every gain. Game rule wotsf_suffering_intensity.
+wotsf_intensity_mult = {
+	if = {
+		limit = { has_game_rule = wotsf_intensity_soft }
+		value = 0.5
+	}
+	else_if = {
+		limit = { has_game_rule = wotsf_intensity_brutal }
+		value = 1.5
+	}
+	else = {
+		value = 1
+	}
+}
+
+# Multiplies the monthly decay. Brutal halves recovery.
+wotsf_decay_mult = {
+	if = {
+		limit = { has_game_rule = wotsf_intensity_brutal }
+		value = 0.5
+	}
+	else = {
+		value = 1
+	}
+}
+
+# Winter makes every gain worse. Evaluated in COUNTY scope.
+# Reads the vanilla winter province modifiers, so it works with or without
+# AGOT: Seasons of Ice and Fire - Seasons simply makes winter far more common.
+wotsf_winter_mult = {
+	if = {
+		limit = { wotsf_county_winter_trigger = yes }
+		value = 1.5
+	}
+	else = {
+		value = 1
+	}
+}
+
+# Monthly decay in a county at peace. Evaluated in COUNTY scope.
+wotsf_decay_amount = {
+	if = {
+		limit = { wotsf_holder_is_merciful_trigger = yes }
+		value = 4
+	}
+	else = {
+		value = 2
+	}
+	multiply = wotsf_decay_mult
+}
+
+# Guarded read of the suffering variable, for loc and for sorting.
+# Evaluated in COUNTY scope.
+wotsf_county_suffering_value = {
+	if = {
+		limit = { has_variable = wotsf_suffering }
+		value = var:wotsf_suffering
+	}
+	else = {
+		value = 0
+	}
+}
+
+### Chevauchee (phase 2) #####################################################
+
+# Monthly suffering charge while a chevauchee runs. Halved where the defender
+# posted men (wotsf.0201 option a). Evaluated in COUNTY scope.
+wotsf_chevauchee_suffering_value = {
+	if = {
+		limit = { wotsf_county_defended_trigger = yes }
+		value = 4
+	}
+	else = {
+		value = 8
+	}
+}
+
+# Monthly plunder, proportional to what there is left to steal.
+# Evaluated in COUNTY scope. Dev 10 -> 1.5 gold a month, 4.5 over the three
+# months, which is meant to be tempting and not decisive.
+wotsf_chevauchee_gold_value = {
+	value = development_level
+	multiply = 0.15
+	if = {
+		limit = { wotsf_county_defended_trigger = yes }
+		multiply = 0.5
+	}
+	min = 0.1
+	max = 8
+}
+
+# AI appetite for the interaction. Evaluated on the ACTOR, scope:target = county.
+# Design 7: a tool of desperation and pressure, not a default opening.
+wotsf_chevauchee_ai_value = {
+	value = 0
+
+	if = {
+		limit = { has_trait = callous }
+		add = 20
+	}
+	if = {
+		limit = { has_trait = sadistic }
+		add = 30
+	}
+	if = {
+		limit = { has_trait = ambitious }
+		add = 15
+	}
+	if = {
+		limit = { has_trait = vengeful }
+		add = 20
+	}
+	if = {
+		limit = { has_trait = wotsf_scourge }
+		add = 25
+	}
+	# Losing, or barely holding: that is when fields start burning.
+	if = {
+		limit = { gold < 50 }
+		add = 15
+	}
+	if = {
+		limit = { has_game_rule = wotsf_ai_chev_aggressive }
+		add = 40
+	}
+}
+
+### The Scourge ##############################################################
+
+# Years of restraint still owed before the reputation fades (design 3.3).
+wotsf_scourge_grace_years = {
+	value = 10
+}
+
+### Brotherhoods (phase 3) ###################################################
+
+# World cap. Eight was reserved for this in the Phase 1 plan.
+wotsf_brotherhood_cap = {
+	value = 8
+}
+
+# Monthly roll, per band-3 county, once every other gate has passed. At 12 a
+# band-3 county raises outlaws in about half a year on average, which is slow
+# enough that healing the county is a real alternative.
+wotsf_brotherhood_spawn_chance = {
+	value = 12
+	if = {
+		limit = { has_game_rule = wotsf_brotherhoods_frequent }
+		multiply = 2.5
+	}
+	if = {
+		limit = { has_game_rule = wotsf_brotherhoods_off }
+		multiply = 0
+	}
+}
+
+# Monthly strength gain. COUNTY scope. The shrink case (suffering under 50) is
+# handled in the tick, not here, because it is a different sign and mixing the
+# two in one value makes the balance pass unreadable.
+wotsf_brotherhood_growth = {
+	value = 3
+	if = {
+		limit = {
+			has_variable = wotsf_suffering
+			var:wotsf_suffering >= 75
+		}
+		add = 2
+	}
+	if = {
+		limit = { exists = var:wotsf_brotherhood_patron }
+		add = 3
+	}
+}
+
+# Percent chance the hunt succeeds. CHARACTER scope (the lord),
+# scope:wotsf_hunt_county = the county. A big band in a ruined county is hard
+# to find; a lord with an army standing there and a head for war is not.
+wotsf_brotherhood_hunt_odds = {
+	value = 20
+	add = martial
+
+	if = {
+		limit = {
+			scope:wotsf_hunt_county = {
+				any_county_province = {
+					any_army_in_location = {
+						army_owner = root
+						is_army_in_combat = no
+					}
+				}
+			}
+		}
+		add = 25
+	}
+
+	# Every 4 points of strength is a point off the odds.
+	if = {
+		limit = {
+			scope:wotsf_hunt_county = {
+				has_variable = wotsf_brotherhood_strength
+			}
+		}
+		subtract = {
+			value = scope:wotsf_hunt_county.var:wotsf_brotherhood_strength
+			multiply = 0.25
+		}
+	}
+
+	min = 5
+	max = 90
+}
+
+# AI appetite for funding someone else's outlaws. Evaluated on the ACTOR.
+# Cheaper than an army and deniable, which is exactly who it should appeal to.
+wotsf_fund_ai_value = {
+	value = 0
+
+	if = {
+		limit = { has_trait = deceitful }
+		add = 25
+	}
+	if = {
+		limit = { has_trait = craven }
+		add = 15
+	}
+	if = {
+		limit = { has_trait = vengeful }
+		add = 20
+	}
+	if = {
+		limit = { has_trait = callous }
+		add = 10
+	}
+	# The gold has to be there and the war has to be worth it.
+	if = {
+		limit = { gold < 200 }
+		add = -40
+	}
+	if = {
+		limit = { intrigue >= 12 }
+		add = 15
+	}
+}

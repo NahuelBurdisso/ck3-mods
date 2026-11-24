@@ -1,0 +1,245 @@
+﻿# AGOT: War of the Small Folk - scripted triggers
+#
+# A scripted trigger that declares a parameter and never reads it FAILS TO
+# COMPILE, and every call site then goes silently dead. None of these takes a
+# parameter; keep it that way unless the parameter is actually read.
+
+### Game rules ###############################################################
+
+wotsf_system_enabled_trigger = {
+	NOT = { has_game_rule = wotsf_intensity_disabled }
+}
+
+wotsf_debug_enabled_trigger = {
+	has_game_rule = wotsf_debug_on
+}
+
+### Compatibility (defensive: never a hard dependency) ########################
+
+# AGOT: Seasons of Ice and Fire sets this global variable in its own
+# on_game_start (common/on_action/agot_seasons_on_start.txt). Reading a global
+# variable that was never set is false and silent, which is what makes this
+# safe when the mod is absent.
+wotsf_seasons_loaded_trigger = {
+	has_global_variable = AGOT_seasons_is_loaded
+}
+
+### County state #############################################################
+
+# Only counties with a holder take part. Guard EVERY entry point with this.
+wotsf_county_valid_trigger = {
+	tier = tier_county
+	exists = holder
+}
+
+wotsf_county_occupied_trigger = {
+	exists = holder
+	exists = county_controller
+	county_controller != holder
+}
+
+wotsf_county_under_siege_trigger = {
+	any_county_province = {
+		any_army_in_location = {
+			is_army_in_siege = yes
+		}
+	}
+}
+
+# Decay only happens when nothing is happening TO the county and its lord is
+# not fighting. A war elsewhere in the realm still stalls recovery: that is the
+# design ("en paz"), not an oversight.
+wotsf_county_at_peace_trigger = {
+	NOT = { wotsf_county_occupied_trigger = yes }
+	NOT = { wotsf_county_under_siege_trigger = yes }
+	holder ?= { is_at_war = no }
+}
+
+# Vanilla winter province modifiers (00_province_modifiers.txt:138-151).
+# winter_none_modifier is deliberately excluded - that is "no winter".
+wotsf_county_winter_trigger = {
+	any_county_province = {
+		OR = {
+			has_province_modifier = winter_mild_modifier
+			has_province_modifier = winter_normal_modifier
+			has_province_modifier = winter_harsh_modifier
+		}
+	}
+}
+
+wotsf_holder_is_merciful_trigger = {
+	holder ?= {
+		OR = {
+			has_trait = compassionate
+			has_trait = just
+		}
+	}
+}
+
+# The county's monthly chain is running. This is the registry membership test.
+wotsf_county_pulse_active_trigger = {
+	has_variable = wotsf_pulse_active
+}
+
+### Chevauchee (phase 2) #####################################################
+# County scope unless stated otherwise.
+
+wotsf_county_chevauchee_active_trigger = {
+	has_variable = wotsf_chevauchee_months
+	var:wotsf_chevauchee_months > 0
+}
+
+# The 6-month per-county cooldown of design 3.1 is not running. The cooldown is
+# a modifier with a duration, not a variable, because it has to outlive the
+# county's place in the suffering registry - see the chevauchee header in
+# wotsf_effects.txt.
+wotsf_county_chevauchee_ready_trigger = {
+	NOT = { wotsf_county_chevauchee_active_trigger = yes }
+	NOT = { has_county_modifier = wotsf_chevauchee_scorched_modifier }
+}
+
+# The county has been garrisoned by its defender (wotsf.0201 option a).
+wotsf_county_defended_trigger = {
+	has_county_modifier = wotsf_defended_modifier
+}
+
+# CHARACTER scope. The faith that holds compassion a virtue condemns this.
+# There is no doctrine parameter for "harming innocents" in 1.19, and naming an
+# AGOT faith key directly would tie the mod to one religion set.
+wotsf_faith_condemns_chevauchee_trigger = {
+	faith ?= {
+		trait_is_virtue = compassionate
+	}
+}
+
+# CHARACTER scope. Swore off the practice for the rest of this war (wotsf.0101 a).
+wotsf_forsworn_chevauchee_trigger = {
+	has_character_flag = wotsf_forsworn_chevauchee
+}
+
+# CHARACTER scope. Personality profile the AI needs before it will burn fields.
+wotsf_cruel_enough_trigger = {
+	OR = {
+		has_trait = callous
+		has_trait = sadistic
+		has_trait = ambitious
+		has_trait = vengeful
+		has_trait = wotsf_scourge
+	}
+}
+
+# CHARACTER scope. Never, no matter the game rule.
+wotsf_merciful_ruler_trigger = {
+	OR = {
+		has_trait = compassionate
+		has_trait = just
+	}
+}
+
+# CHARACTER scope. The game rule of design 6, third entry.
+wotsf_ai_may_chevauchee_trigger = {
+	NOT = { has_game_rule = wotsf_ai_chev_never }
+	NOT = { wotsf_merciful_ruler_trigger = yes }
+	trigger_if = {
+		limit = { has_game_rule = wotsf_ai_chev_cruel }
+		wotsf_cruel_enough_trigger = yes
+	}
+}
+
+# CHARACTER scope, root = the would-be perpetrator, scope:target = the county.
+# Everything the interaction needs, in one place, so the debug decision and the
+# AI check cannot drift apart from the player's path.
+wotsf_can_chevauchee_county_trigger = {
+	scope:target = {
+		tier = tier_county
+		exists = holder
+		wotsf_county_chevauchee_ready_trigger = yes
+		holder = { is_at_war_with = root }
+		any_county_province = {
+			any_army_in_location = {
+				army_owner = root
+				is_army_in_combat = no
+			}
+		}
+	}
+}
+
+### Brotherhoods (phase 3) ###################################################
+# County scope unless stated otherwise.
+
+# Membership test. wotsf_brotherhood_strength is written on spawn and removed
+# by wotsf_end_brotherhood_effect, so its presence IS the band's existence.
+# The leader variable is not the test: a band whose leader was culled from the
+# character pool still has to be torn down, and it is this trigger that gets
+# the tick to notice.
+wotsf_county_brotherhood_active_trigger = {
+	has_variable = wotsf_brotherhood_strength
+}
+
+# The leader died, or was never created, or the engine took him back.
+wotsf_brotherhood_leader_gone_trigger = {
+	OR = {
+		NOT = { exists = var:wotsf_brotherhood_leader }
+		var:wotsf_brotherhood_leader = { is_alive = no }
+	}
+}
+
+wotsf_brotherhoods_enabled_trigger = {
+	NOT = { has_game_rule = wotsf_brotherhoods_off }
+}
+
+# The world cap. Measured against wotsf_brotherhood_counties and NOT against
+# wotsf_active_counties: the latter is every suffering county on the map, so
+# capping on it would cap nothing. A list that was never created reads as
+# absent, not as size 0, which is why the OR is here.
+wotsf_brotherhood_world_room_trigger = {
+	OR = {
+		NOT = { has_global_variable_list = wotsf_brotherhood_counties }
+		global_variable_list_size = {
+			name = wotsf_brotherhood_counties
+			value < wotsf_brotherhood_cap
+		}
+	}
+}
+
+# Everything the monthly roll needs, cheapest test first: a county that has
+# never suffered fails on the first line.
+wotsf_brotherhood_can_spawn_trigger = {
+	NOT = { wotsf_county_brotherhood_active_trigger = yes }
+	has_variable = wotsf_suffering
+	var:wotsf_suffering >= 75
+	exists = holder
+	wotsf_brotherhoods_enabled_trigger = yes
+	wotsf_brotherhood_world_room_trigger = yes
+}
+
+# CHARACTER scope. Gate for the three decisions of D5. Bounded by the realm.
+wotsf_holder_has_brotherhood_trigger = {
+	any_held_title = {
+		tier = tier_county
+		wotsf_county_brotherhood_active_trigger = yes
+	}
+}
+
+# CHARACTER scope. The relief decision is offered for any hurt county, band 1
+# and up, brotherhood or not. It is the Phase 1 loop finally having a lever.
+wotsf_holder_has_hurt_county_trigger = {
+	any_held_title = {
+		tier = tier_county
+		has_variable = wotsf_band
+		var:wotsf_band >= 1
+	}
+}
+
+### The Scourge ##############################################################
+
+# CHARACTER scope. Ten years without burning anything undoes the reputation.
+# wotsf_scourge_grace is set to 10 whenever a chevauchee happens and counted
+# down one per birthday, so this costs one variable read per scourge per year.
+wotsf_scourge_lapsed_trigger = {
+	has_trait = wotsf_scourge
+	OR = {
+		NOT = { has_variable = wotsf_scourge_grace }
+		var:wotsf_scourge_grace <= 0
+	}
+}

@@ -1,0 +1,69 @@
+﻿# AGOT: War of the Small Folk - opinion modifiers
+#
+# All new keys. `monthly_change` and a duration are mutually exclusive
+# (game/common/opinion_modifiers/_opinions.info), so every entry here uses a
+# duration + decay, which is the vanilla pattern for one-off deeds.
+#
+# `stacking = yes` means a second chevauchee piles on top of the first instead
+# of merely refreshing it. That is the point: the dishonour accumulates.
+
+wotsf_dishonour_opinion = {
+	opinion = -5
+	years = 10
+	decaying = yes
+	stacking = yes
+}
+
+wotsf_ruthless_opinion = {
+	opinion = 5
+	years = 10
+	decaying = yes
+	stacking = yes
+}
+
+wotsf_mercy_opinion = {
+	opinion = 5
+	years = 10
+	decaying = yes
+	stacking = yes
+}
+
+# The lord who was promised justice and never got it. Slow to fade on purpose.
+wotsf_broken_promise_opinion = {
+	opinion = -15
+	years = 20
+	decaying = yes
+}
+
+# The knight who spoke up and was heard.
+wotsf_spared_opinion = {
+	opinion = 20
+	years = 20
+	decaying = yes
+}
+
+# The knight who spoke up and was humiliated for it.
+wotsf_humiliated_opinion = {
+	opinion = -50
+	years = 20
+	decaying = yes
+}
+
+### Brotherhoods (phase 3) ###################################################
+
+# Caught paying outlaws to burn another lord's land. Applied to the victim and
+# to every vassal of theirs when the secret is exposed. Not decaying: this is
+# the one thing in the mod nobody forgets.
+wotsf_patron_exposed_opinion = {
+	opinion = -30
+	years = 30
+}
+
+# You sat down with outlaws instead of hanging them. The proud think less of
+# you for it; the rest of the realm mostly does not care.
+wotsf_weakness_opinion = {
+	opinion = -10
+	years = 10
+	decaying = yes
+	stacking = yes
+}

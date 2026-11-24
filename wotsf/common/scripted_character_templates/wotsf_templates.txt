@@ -1,0 +1,31 @@
+﻿# AGOT: War of the Small Folk - character templates
+#
+# Our own template, deliberately not one of AGOT's. 00_peasants_template.txt is
+# overridden by three mods in this playset (ck3.py where -> AGOT: House Founders
+# wins it), so naming a template out of that file would be a second hard
+# dependency on a file we do not own and cannot see the winning version of.
+#
+# Used by wotsf_spawn_brotherhood_effect. Culture and faith are NOT set here:
+# they are passed at the call site, from the county the band rose in.
+
+wotsf_brotherhood_leader_template = {
+	age = { 25 45 }
+	gender_female_chance = 15
+	dynasty = none
+	random_traits = yes
+
+	# A serjeant or a poacher, not a knight. Good with a blade, bad with a ledger.
+	martial = { 8 16 }
+	prowess = { 8 16 }
+	stewardship = { 2 8 }
+	diplomacy = { 4 12 }
+
+	# One thing that explains why they lead. The band is not automatically evil.
+	random_traits_list = {
+		count = 1
+		brave = {}
+		just = {}
+		vengeful = {}
+		callous = {}
+	}
+}

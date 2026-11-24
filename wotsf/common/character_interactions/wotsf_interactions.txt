@@ -1,0 +1,298 @@
+﻿# AGOT: War of the Small Folk - character interactions
+#
+# A CK3 decision cannot point at a county. The only vehicle in 1.19 that lets
+# the player pick one is an interaction with target_type = title, so the
+# chevauchee is sent AT the enemy ruler, with one of their counties as target
+# (same machinery as revoke_title_interaction, 00_revoke_title_interaction.txt).
+#
+# It is hostile and cannot be refused: auto_accept = yes. The recipient still
+# gets the popup, and wotsf.0201 gives them something to do about it.
+
+wotsf_chevauchee_interaction = {
+	category = interaction_category_hostile
+	common_interaction = yes
+	icon = icon_hostile
+	interface_priority = 80
+
+	desc = wotsf_chevauchee_interaction_desc
+
+	target_type = title
+	target_filter = recipient_domain_titles
+
+	auto_accept = yes
+	use_diplomatic_range = no
+	popup_on_receive = yes
+	pause_on_receive = no
+	send_options_exclusive = no
+
+	is_shown = {
+		scope:recipient != scope:actor
+		wotsf_system_enabled_trigger = yes
+		scope:actor = {
+			is_landed = yes
+			is_at_war_with = scope:recipient
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = { has_trait = incapable }
+			custom_tooltip = {
+				text = wotsf_forsworn_tt
+				NOT = { wotsf_forsworn_chevauchee_trigger = yes }
+			}
+		}
+	}
+
+	# The tier_county guard is not redundant with can_be_picked_title. That one
+	# only governs what the picker OFFERS; this block is evaluated against every
+	# title in the recipient's domain, baronies included, and any_county_province
+	# on a barony logs "Title b_X in county_province list should be county but
+	# was barony" (province_script_list_impl.cpp:93). trigger_if skips the whole
+	# block for a non-county, which leaves the target valid - correct, because
+	# can_be_picked_title is what actually keeps a barony from being chosen.
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			trigger_if = {
+				limit = { tier = tier_county }
+				custom_tooltip = {
+					text = wotsf_chevauchee_needs_army_tt
+					any_county_province = {
+						any_army_in_location = {
+							army_owner = scope:actor
+							is_army_in_combat = no
+						}
+					}
+				}
+				custom_tooltip = {
+					text = wotsf_chevauchee_cooldown_tt
+					wotsf_county_chevauchee_ready_trigger = yes
+				}
+			}
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			tier = tier_county
+			exists = holder
+			holder = { is_at_war_with = scope:actor }
+		}
+	}
+
+	# ONE SEND WAS OBSERVED PRODUCING TWO on_accept PASSES, a second apart
+	# (2026-08-27: `WOTSF: chevauchee start` at 14:14:36 and again at 14:14:37).
+	# Everything below is charged to the actor - piety, gold, the wotsf_chev_count
+	# that decides when wotsf.0101 fires - so a second pass is not cosmetic.
+	#
+	# The re-entry guard is also the experiment that says which of the two causes
+	# it is. If on_accept genuinely runs twice, the second pass now reads the
+	# wotsf_chevauchee_months this one just wrote and logs `re-entry blocked`
+	# instead of starting again. If instead one of the two passes was the tooltip
+	# pass - where writes are discarded, the trap that produced 5405 lines in the
+	# decisions - the guard cannot see its own write and TWO starts will show up
+	# again. Read the next run's markers before believing either story.
+	on_accept = {
+		scope:actor = {
+			save_scope_as = chev_actor
+		}
+		scope:recipient = {
+			save_scope_as = chev_victim
+		}
+		scope:target = {
+			save_scope_as = chev_county
+		}
+
+		if = {
+			limit = {
+				scope:target = {
+					NOT = { wotsf_county_chevauchee_active_trigger = yes }
+				}
+			}
+
+			scope:target = {
+				wotsf_start_chevauchee_effect = yes
+			}
+
+			scope:actor = {
+				wotsf_chevauchee_costs_effect = yes
+				wotsf_register_chevauchee_effect = yes
+
+				# The third one against the same opponent is the one a knight of
+				# your own host will not swallow.
+				if = {
+					limit = {
+						has_variable = wotsf_chev_count
+						var:wotsf_chev_count >= 3
+						any_knight = {
+							is_alive = yes
+							OR = {
+								has_trait = compassionate
+								has_trait = honest
+								has_trait = just
+							}
+						}
+					}
+					trigger_event = { id = wotsf.0101 days = 3 }
+				}
+			}
+
+			# The defending ruler hears about it from one of his own lords.
+			scope:recipient = {
+				if = {
+					limit = { NOT = { has_character_flag = wotsf_chevauchee_warned } }
+					add_character_flag = {
+						flag = wotsf_chevauchee_warned
+						years = 5
+					}
+					trigger_event = { id = wotsf.0201 days = 5 }
+				}
+			}
+		}
+		else = {
+			debug_log = "WOTSF: chevauchee re-entry blocked"
+		}
+	}
+
+	ai_potential = {
+		wotsf_ai_may_chevauchee_trigger = yes
+	}
+
+	ai_targets = {
+		ai_recipients = war_enemies
+	}
+
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+
+	ai_frequency = 12
+
+	# MTTH block, not a script value. Two things it will not take, both found
+	# the hard way: `value = ` logs "unknown command 'value' for MTTH", and
+	# `base` takes a literal only - a script value name there is a "Malformed
+	# token". A script value has to come in through a modifier's `add`, which
+	# is how vanilla does it (`add = cowed_halved_reason_value`).
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			always = yes
+			add = wotsf_chevauchee_ai_value
+		}
+	}
+}
+
+############################################################################
+# PHASE 3 - THE PATRON
+#
+# Same title-targeted machinery as the chevauchee above, with one deliberate
+# difference: popup_on_receive = no. The victim is NOT told. Being told is
+# what the vanilla secret system is for, and it decides when - through the
+# spymaster, or through whoever buys the hook.
+#
+# The category is diplomacy, not hostile. There is no intrigue category in
+# 1.19 - the valid list is diplomacy / friendly / hostile / prison / religion
+# / succession / vassal / uncategorized / diarch / laamp - and hostile would
+# put the thing in the same drawer as a declaration of war, which is the
+# opposite of the point.
+############################################################################
+
+wotsf_fund_brotherhood_interaction = {
+	category = interaction_category_diplomacy
+	common_interaction = yes
+	icon = icon_scheme_coerce_contribution
+	interface_priority = 70
+
+	desc = wotsf_fund_brotherhood_interaction_desc
+
+	target_type = title
+	target_filter = recipient_domain_titles
+
+	auto_accept = yes
+	use_diplomatic_range = no
+	popup_on_receive = no
+	pause_on_receive = no
+	send_options_exclusive = no
+
+	is_shown = {
+		scope:recipient != scope:actor
+		wotsf_system_enabled_trigger = yes
+		scope:actor = {
+			is_landed = yes
+			is_at_war_with = scope:recipient
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			NOT = { has_trait = incapable }
+		}
+	}
+
+	cost = {
+		gold = {
+			value = 150
+		}
+	}
+
+	# tier_county guard inside trigger_if, not alongside the block. This is
+	# evaluated against EVERY title in the recipient's domain, baronies
+	# included, and a county-only trigger run on a barony logs a line naming
+	# the title and not the mod - the Phase 2 bug that a prefix grep missed.
+	has_valid_target_showing_failures_only = {
+		scope:target = {
+			trigger_if = {
+				limit = { tier = tier_county }
+				custom_tooltip = {
+					text = wotsf_fund_needs_brotherhood_tt
+					wotsf_county_brotherhood_active_trigger = yes
+				}
+				custom_tooltip = {
+					text = wotsf_fund_already_tt
+					NOT = { exists = var:wotsf_brotherhood_patron }
+				}
+			}
+		}
+	}
+
+	can_be_picked_title = {
+		scope:target = {
+			tier = tier_county
+			exists = holder
+			wotsf_county_brotherhood_active_trigger = yes
+			NOT = { exists = var:wotsf_brotherhood_patron }
+		}
+	}
+
+	on_accept = {
+		wotsf_fund_brotherhood_effect = yes
+	}
+
+	ai_potential = {
+		wotsf_brotherhoods_enabled_trigger = yes
+		is_landed = yes
+	}
+
+	ai_targets = {
+		ai_recipients = war_enemies
+	}
+
+	ai_target_quick_trigger = {
+		adult = yes
+	}
+
+	ai_frequency = 12
+
+	# MTTH block, not a script value: `value = ` is an unknown command here and
+	# `base` takes a literal only. A script value comes in through a modifier's
+	# `add`. Found the hard way in Phase 2 - see the chevauchee note above.
+	ai_will_do = {
+		base = 0
+
+		modifier = {
+			always = yes
+			add = wotsf_fund_ai_value
+		}
+	}
+}

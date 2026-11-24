@@ -1,0 +1,25 @@
+﻿# AGOT: War of the Small Folk - traits
+#
+# New key only; the vanilla and AGOT trait files are untouched.
+#
+# `category = fame`, not personality: this is earned by deeds, like reaver and
+# viking, and it can be lost again (penance, or ten years of restraint).
+# `icon` must name a texture that exists - the default is <key>.dds, which we
+# do not ship - so it borrows the base game's reaver icon.
+
+wotsf_scourge = {
+	category = fame
+	icon = reaver.dds
+
+	dread_baseline_add = 20
+	vassal_opinion = -10
+	clergy_opinion = -20
+
+	# "+10% mercenary attraction" of design 3.3: the cruel come cheap to the cruel.
+	mercenary_hire_cost_mult = -0.1
+
+	ruler_designer_cost = 20
+
+	# The reputation is hereditary, but as a modifier on the children rather than
+	# a trait: wotsf_scourge_child_modifier, applied and stripped by wotsf.0120-0122.
+}

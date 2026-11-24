@@ -1,0 +1,296 @@
+﻿namespace = wotsf
+
+############################################################################
+# PHASE 3 - BROTHERHOODS
+#
+# wotsf.0301  they rise                 to the county's holder
+# wotsf.0302  the tax caravan is taken  to the county's holder
+# wotsf.0303  they are a name now       to the county's holder
+# wotsf.0304  the patron is exposed     to the patron, from the secret
+# wotsf.0401  the hunt resolves         to the lord who ordered it
+#
+# Every one of these is raised from the Phase 1 county pulse or from a
+# decision. There is no new hook and no new loop in this phase.
+############################################################################
+
+############################################################################
+# wotsf.0301 - BANNERS IN THE WOODS
+#
+# root = the county's holder. scope:wotsf_band_county was saved by
+# wotsf_spawn_brotherhood_effect; scope:wotsf_band_leader exists unless the
+# county had no province to put him in, which should be impossible for a
+# valid county but is guarded anyway.
+############################################################################
+
+wotsf.0301 = {
+	type = character_event
+	title = wotsf.0301.t
+	desc = wotsf.0301.desc
+	theme = crime
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	right_portrait = {
+		character = scope:wotsf_band_leader
+		animation = personality_bold
+	}
+
+	trigger = {
+		exists = scope:wotsf_band_county
+	}
+
+	immediate = {
+		debug_log = "WOTSF: brotherhood announced"
+	}
+
+	option = {
+		name = wotsf.0301.a
+	}
+
+	option = {
+		name = wotsf.0301.b
+		trait = callous
+	}
+}
+
+############################################################################
+# wotsf.0302 - THE TAX CARAVAN
+#
+# root = the holder. Fires at strength 40+, at most once every two years per
+# county (wotsf_brotherhood_robbed_cd, a self-expiring variable).
+############################################################################
+
+wotsf.0302 = {
+	type = character_event
+	title = wotsf.0302.t
+	desc = wotsf.0302.desc
+	theme = crime
+
+	left_portrait = {
+		character = root
+		animation = anger
+	}
+
+	trigger = {
+		exists = scope:wotsf_band_county
+	}
+
+	immediate = {
+		# What there was to steal, scaled to what the county still has. The
+		# same shape as the chevauchee plunder, and for the same reason: a
+		# ruined county cannot be robbed of much.
+		save_scope_value_as = {
+			name = wotsf_robbed_gold
+			value = {
+				value = scope:wotsf_band_county.development_level
+				multiply = 0.4
+				min = 5
+				max = 40
+			}
+		}
+		add_gold = {
+			value = scope:wotsf_robbed_gold
+			multiply = -1
+		}
+		debug_log = "WOTSF: brotherhood robbery"
+	}
+
+	option = {
+		name = wotsf.0302.a
+	}
+}
+
+############################################################################
+# wotsf.0303 - THEY ARE A NAME NOW
+#
+# root = the holder. Once per band, at strength 70+. This is the event that
+# tells the player the band has stopped being a nuisance.
+############################################################################
+
+wotsf.0303 = {
+	type = character_event
+	title = wotsf.0303.t
+	desc = wotsf.0303.desc
+	theme = crime
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	right_portrait = {
+		character = scope:wotsf_band_leader
+		animation = personality_bold
+	}
+
+	trigger = {
+		exists = scope:wotsf_band_county
+	}
+
+	immediate = {
+		debug_log = "WOTSF: brotherhood famous"
+	}
+
+	option = {
+		name = wotsf.0303.a
+		add_stress = 10
+	}
+
+	option = {
+		name = wotsf.0303.b
+		trait = arrogant
+		add_dread = 5
+		scope:wotsf_band_county = {
+			change_variable = { name = wotsf_brotherhood_strength add = 5 }
+		}
+	}
+}
+
+############################################################################
+# wotsf.0304 - THE GOLD IS TRACED
+#
+# root = the patron. Raised by wotsf_secret_funding_outlaws on_expose, so the
+# vanilla secret machinery - the spymaster, a blackmailer spending the hook -
+# is what decides when this happens. scope:secret_target is the wronged ruler.
+############################################################################
+
+wotsf.0304 = {
+	type = character_event
+	title = wotsf.0304.t
+	desc = wotsf.0304.desc
+	theme = crime
+
+	left_portrait = {
+		character = root
+		animation = shame
+	}
+
+	right_portrait = {
+		character = scope:secret_target
+		animation = anger
+	}
+
+	trigger = {
+		exists = scope:secret_target
+	}
+
+	immediate = {
+		scope:secret_target = {
+			add_opinion = {
+				modifier = wotsf_patron_exposed_opinion
+				target = root
+			}
+			every_vassal = {
+				add_opinion = {
+					modifier = wotsf_patron_exposed_opinion
+					target = root
+				}
+			}
+		}
+		add_prestige = -100
+		debug_log = "WOTSF: patron exposed"
+	}
+
+	option = {
+		name = wotsf.0304.a
+	}
+
+	option = {
+		name = wotsf.0304.b
+		trait = shy
+		add_stress = 15
+	}
+}
+
+############################################################################
+# wotsf.0401 - THE HUNT
+#
+# root = the lord who took wotsf_hunt_brotherhood_decision.
+# scope:wotsf_hunt_county = the county the decision resolved to.
+#
+# The roll happens in immediate and is stored as a scope VALUE, so the two
+# triggered_desc arms and the option effects all read the same result. Do not
+# re-roll in an option: an option runs after the description is built and a
+# second random would contradict the text the player just read.
+############################################################################
+
+wotsf.0401 = {
+	type = character_event
+	title = wotsf.0401.t
+	theme = crime
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = { scope:wotsf_hunt_result = 1 }
+				desc = wotsf.0401.desc.win
+			}
+			desc = wotsf.0401.desc.fail
+		}
+	}
+
+	left_portrait = {
+		character = root
+		animation = personality_bold
+	}
+
+	trigger = {
+		exists = scope:wotsf_hunt_county
+	}
+
+	immediate = {
+		save_scope_value_as = {
+			name = wotsf_hunt_result
+			value = 0
+		}
+		random = {
+			chance = wotsf_brotherhood_hunt_odds
+			save_scope_value_as = {
+				name = wotsf_hunt_result
+				value = 1
+			}
+		}
+
+		if = {
+			limit = { scope:wotsf_hunt_result = 1 }
+			scope:wotsf_hunt_county = {
+				if = {
+					limit = { NOT = { wotsf_brotherhood_leader_gone_trigger = yes } }
+					var:wotsf_brotherhood_leader = {
+						death = {
+							killer = root
+							death_reason = wotsf_death_outlaw
+						}
+					}
+				}
+				wotsf_end_brotherhood_effect = yes
+			}
+			add_prestige = 100
+			add_dread = 5
+			debug_log = "WOTSF: brotherhood hunt win"
+		}
+		else = {
+			scope:wotsf_hunt_county = {
+				if = {
+					limit = { wotsf_county_brotherhood_active_trigger = yes }
+					change_variable = { name = wotsf_brotherhood_strength add = 15 }
+					if = {
+						limit = { var:wotsf_brotherhood_strength > 100 }
+						set_variable = { name = wotsf_brotherhood_strength value = 100 }
+					}
+					wotsf_set_brotherhood_tier_effect = yes
+				}
+				wotsf_add_suffering_effect = { AMOUNT = 10 }
+			}
+			add_prestige = -50
+			debug_log = "WOTSF: brotherhood hunt fail"
+		}
+	}
+
+	option = {
+		name = wotsf.0401.a
+	}
+}

@@ -1,0 +1,82 @@
+﻿# AGOT: War of the Small Folk - game rules
+#
+# New rules only. Vanilla and AGOT rules are untouched: game rules are keyed by
+# rule name, so redefining one would overwrite it wholesale.
+#
+# `has_game_rule = X` reads the SETTING name, not the rule name, which is why
+# every setting below carries the wotsf_ prefix too.
+
+wotsf_suffering_intensity = {
+	categories = {
+		wotsf
+	}
+
+	default = wotsf_intensity_canon
+
+	wotsf_intensity_disabled = {
+	}
+
+	wotsf_intensity_soft = {
+	}
+
+	wotsf_intensity_canon = {
+	}
+
+	wotsf_intensity_brutal = {
+	}
+}
+
+# Design 6, third entry. Read by wotsf_ai_may_chevauchee_trigger (gate) and by
+# wotsf_chevauchee_ai_value (appetite). Merciful rulers never do it regardless.
+wotsf_ai_chevauchee = {
+	categories = {
+		wotsf
+	}
+
+	default = wotsf_ai_chev_cruel
+
+	wotsf_ai_chev_never = {
+	}
+
+	wotsf_ai_chev_cruel = {
+	}
+
+	wotsf_ai_chev_aggressive = {
+	}
+}
+
+# Phase 3. Multiplies wotsf_brotherhood_spawn_chance by 0 / 1 / 2.5.
+#
+# "Off" is a real off switch and not a freeze: no county rolls for a new band,
+# but bands that already exist keep ticking and keep the four ways they can
+# die. Turning it off mid-game therefore strands nothing.
+wotsf_brotherhoods = {
+	categories = {
+		wotsf
+	}
+
+	default = wotsf_brotherhoods_normal
+
+	wotsf_brotherhoods_off = {
+	}
+
+	wotsf_brotherhoods_normal = {
+	}
+
+	wotsf_brotherhoods_frequent = {
+	}
+}
+
+wotsf_debug_mode = {
+	categories = {
+		wotsf
+	}
+
+	default = wotsf_debug_off
+
+	wotsf_debug_off = {
+	}
+
+	wotsf_debug_on = {
+	}
+}

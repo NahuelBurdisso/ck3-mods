@@ -1,0 +1,768 @@
+﻿# AGOT: War of the Small Folk - scripted effects
+#
+# ALL of these run in COUNTY (landed_title) scope unless stated otherwise.
+#
+# The registry of design section 11 is not a scan: it is the set of counties
+# with a live wotsf.0001 chain. wotsf_active_counties (a global variable list)
+# mirrors it for the report and for the phase-3 world caps. Nothing here ever
+# iterates the map.
+
+### Enrollment ###############################################################
+
+# Idempotent. Creates the variables late (never on the whole map) and starts the
+# monthly chain exactly once.
+wotsf_enroll_county_effect = {
+	if = {
+		limit = { NOT = { has_variable = wotsf_suffering } }
+		set_variable = { name = wotsf_suffering value = 0 }
+	}
+	if = {
+		limit = { NOT = { has_variable = wotsf_band } }
+		set_variable = { name = wotsf_band value = 0 }
+	}
+	if = {
+		limit = { NOT = { has_variable = wotsf_pulse_active } }
+		set_variable = { name = wotsf_pulse_active value = yes }
+		add_to_global_variable_list = { name = wotsf_active_counties target = this }
+		trigger_event = { id = wotsf.0001 days = 30 }
+		debug_log = "WOTSF: enroll county"
+	}
+}
+
+# Leaves the registry: variables gone, modifier gone, chain dies on its next
+# hop because wotsf_county_pulse_active_trigger is now false.
+#
+# EVERY county variable the mod owns must be dropped here. The chevauchee
+# cooldown is counted down by the pulse, so a cooldown left behind on a county
+# whose chain has died would never expire and the county could never be raided
+# again. A county that has healed to 0 has earned its cooldown back anyway.
+wotsf_clear_county_effect = {
+	wotsf_strip_band_modifiers_effect = yes
+	# The brotherhood modifiers carry no duration, so this is not optional: a
+	# county that heals to 0 with a band still on it would keep that modifier
+	# for the rest of the game. Guarded so a normal teardown does not log a
+	# brotherhood line it never had.
+	if = {
+		limit = { wotsf_county_brotherhood_active_trigger = yes }
+		wotsf_end_brotherhood_effect = yes
+	}
+	remove_variable = wotsf_suffering
+	remove_variable = wotsf_band
+	remove_variable = wotsf_pulse_active
+	remove_variable = wotsf_army_claim_hostile
+	remove_variable = wotsf_army_claim_friendly
+	remove_variable = wotsf_chevauchee_months
+	remove_variable = wotsf_chevauchee_leader
+	# wotsf_chevauchee_scorched_modifier is deliberately NOT removed here. It is
+	# the cooldown, it has to outlive the chain, and it carries its own duration.
+	remove_list_global_variable = { name = wotsf_active_counties target = this }
+	debug_log = "WOTSF: chain end"
+}
+
+### Suffering ################################################################
+
+# AMOUNT is read below, which is what keeps this effect compiling.
+wotsf_add_suffering_effect = {
+	wotsf_enroll_county_effect = yes
+	change_variable = {
+		name = wotsf_suffering
+		add = {
+			value = $AMOUNT$
+			multiply = wotsf_intensity_mult
+			multiply = wotsf_winter_mult
+		}
+	}
+	# EVERY `var:` read in this file is guarded by has_variable, and not out of
+	# politeness. CK3 builds a decision's effect tooltip by RUNNING the effect
+	# in tooltip mode, where writes do not stick: wotsf_enroll_county_effect
+	# appears to set wotsf_suffering, the write is discarded, and every read
+	# after it logs "Failed to fetch variable ... due to not being set" - once
+	# per read, per frame, for as long as the decision list is open. That is
+	# 5405 error lines from about a minute of hovering, on 2026-08-27.
+	if = {
+		limit = {
+			has_variable = wotsf_suffering
+			var:wotsf_suffering > 100
+		}
+		set_variable = { name = wotsf_suffering value = 100 }
+	}
+	wotsf_update_band_effect = yes
+}
+
+wotsf_decay_suffering_effect = {
+	change_variable = {
+		name = wotsf_suffering
+		subtract = wotsf_decay_amount
+	}
+	if = {
+		limit = {
+			has_variable = wotsf_suffering
+			var:wotsf_suffering <= 0
+		}
+		wotsf_clear_county_effect = yes
+	}
+	else = {
+		wotsf_update_band_effect = yes
+	}
+}
+
+### Bands ####################################################################
+
+wotsf_strip_band_modifiers_effect = {
+	if = {
+		limit = { has_county_modifier = wotsf_suffering_1_modifier }
+		remove_county_modifier = wotsf_suffering_1_modifier
+	}
+	if = {
+		limit = { has_county_modifier = wotsf_suffering_2_modifier }
+		remove_county_modifier = wotsf_suffering_2_modifier
+	}
+	if = {
+		limit = { has_county_modifier = wotsf_suffering_3_modifier }
+		remove_county_modifier = wotsf_suffering_3_modifier
+	}
+}
+
+# Only touches modifiers when the band actually changes, so a county sitting
+# still costs one comparison a month.
+wotsf_update_band_effect = {
+	if = {
+		limit = {
+			has_variable = wotsf_suffering
+			has_variable = wotsf_band
+			var:wotsf_suffering >= 75
+			NOT = { var:wotsf_band = 3 }
+		}
+		wotsf_strip_band_modifiers_effect = yes
+		add_county_modifier = wotsf_suffering_3_modifier
+		set_variable = { name = wotsf_band value = 3 }
+		debug_log = "WOTSF: band 3"
+	}
+	else_if = {
+		limit = {
+			has_variable = wotsf_suffering
+			has_variable = wotsf_band
+			var:wotsf_suffering >= 50
+			var:wotsf_suffering < 75
+			NOT = { var:wotsf_band = 2 }
+		}
+		wotsf_strip_band_modifiers_effect = yes
+		add_county_modifier = wotsf_suffering_2_modifier
+		set_variable = { name = wotsf_band value = 2 }
+		debug_log = "WOTSF: band 2"
+	}
+	else_if = {
+		limit = {
+			has_variable = wotsf_suffering
+			has_variable = wotsf_band
+			var:wotsf_suffering >= 25
+			var:wotsf_suffering < 50
+			NOT = { var:wotsf_band = 1 }
+		}
+		wotsf_strip_band_modifiers_effect = yes
+		add_county_modifier = wotsf_suffering_1_modifier
+		set_variable = { name = wotsf_band value = 1 }
+		debug_log = "WOTSF: band 1"
+	}
+	else_if = {
+		limit = {
+			has_variable = wotsf_suffering
+			has_variable = wotsf_band
+			var:wotsf_suffering < 25
+			NOT = { var:wotsf_band = 0 }
+		}
+		wotsf_strip_band_modifiers_effect = yes
+		set_variable = { name = wotsf_band value = 0 }
+		debug_log = "WOTSF: band 0"
+	}
+}
+
+### The monthly tick #########################################################
+
+# Called only from wotsf.0001, in county scope.
+wotsf_county_tick_effect = {
+	if = {
+		limit = { wotsf_county_under_siege_trigger = yes }
+		wotsf_add_suffering_effect = { AMOUNT = 4 }
+		debug_log = "WOTSF: tick siege"
+	}
+	if = {
+		limit = { wotsf_county_occupied_trigger = yes }
+		wotsf_add_suffering_effect = { AMOUNT = 2 }
+		debug_log = "WOTSF: tick occupation"
+	}
+	# A county with a host riding through it burning granaries is not at peace,
+	# whatever its holder's war status says. Without this guard a chevauchee on
+	# a quiet county decays to 0 on its first tick, wotsf_clear_county_effect
+	# kills the chain, and the raid runs on with nothing counting it down.
+	if = {
+		limit = {
+			wotsf_county_at_peace_trigger = yes
+			NOT = { wotsf_county_chevauchee_active_trigger = yes }
+		}
+		wotsf_decay_suffering_effect = yes
+		debug_log = "WOTSF: tick decay"
+	}
+	# The army claims are what stops five stacks in one county from charging
+	# five times in the same month. Cleared here, once a month, always.
+	if = {
+		limit = { has_variable = wotsf_army_claim_hostile }
+		remove_variable = wotsf_army_claim_hostile
+	}
+	if = {
+		limit = { has_variable = wotsf_army_claim_friendly }
+		remove_variable = wotsf_army_claim_friendly
+	}
+	wotsf_chevauchee_tick_effect = yes
+	wotsf_brotherhood_tick_effect = yes
+}
+
+# Suffering bought down with gold instead of time (the relief decision, and
+# the price of treating with a brotherhood).
+#
+# Deliberately NOT wotsf_add_suffering_effect with a negative AMOUNT: that one
+# multiplies by intensity and by winter, so relief would be worth half as much
+# in the season the county needs it most and 1.5x in Brutal, which is backwards
+# on both counts. Gold buys grain at the same rate all year.
+wotsf_relieve_suffering_effect = {
+	if = {
+		limit = { has_variable = wotsf_suffering }
+		change_variable = {
+			name = wotsf_suffering
+			subtract = $AMOUNT$
+		}
+		if = {
+			limit = { var:wotsf_suffering <= 0 }
+			wotsf_clear_county_effect = yes
+		}
+		else = {
+			wotsf_update_band_effect = yes
+		}
+	}
+}
+
+##############################################################################
+# PHASE 2 - CHEVAUCHEE
+#
+# The mode is county state, not army state: add_army_modifier does not exist
+# in 1.19. Everything below runs in COUNTY scope unless stated otherwise.
+#
+# The county carries:
+#   wotsf_chevauchee_months    3 -> 0, counted down by the monthly pulse
+#   wotsf_chevauchee_leader    the commander, for gold, dread and flavour
+#
+# The 6-month cooldown of design 3.1 is NOT a variable. It was one until
+# 2026-08-27, and it could not work: the cooldown has to outlive the suffering,
+# but wotsf_clear_county_effect deletes the county's variables the moment
+# suffering hits 0, and the only thing that decremented the cooldown was the
+# pulse that the same effect shuts off. A merciful lord and a defended county
+# clear 12 suffering in three months and the six-month cooldown died with it.
+# Simply not deleting the variable is worse, not better - the county leaves the
+# registry either way, so nothing would ever count the cooldown down again and
+# it would block that county forever. It is now a county modifier with
+# months = 6, which the engine expires on its own with no ticker at all.
+##############################################################################
+
+# Needs scope:chev_actor (the ruler who ordered it). The commander is looked up
+# here rather than passed in, so the interaction, the AI and the debug decision
+# cannot drift apart.
+wotsf_start_chevauchee_effect = {
+	wotsf_enroll_county_effect = yes
+	set_variable = { name = wotsf_chevauchee_months value = 3 }
+	add_county_modifier = {
+		modifier = wotsf_chevauchee_active_modifier
+		months = 3
+	}
+
+	# Whoever leads the actor's army standing here. Falls back to the actor,
+	# who may be commanding in person or sitting at home.
+	random_county_province = {
+		limit = {
+			any_army_in_location = {
+				army_owner = scope:chev_actor
+				exists = army_commander
+			}
+		}
+		random_army_in_location = {
+			limit = {
+				army_owner = scope:chev_actor
+				exists = army_commander
+			}
+			army_commander = {
+				save_temporary_scope_as = wotsf_found_commander
+			}
+		}
+	}
+	if = {
+		limit = { exists = scope:wotsf_found_commander }
+		set_variable = {
+			name = wotsf_chevauchee_leader
+			value = scope:wotsf_found_commander
+		}
+	}
+	else = {
+		set_variable = { name = wotsf_chevauchee_leader value = scope:chev_actor }
+	}
+
+	# Guarded even though both branches above set it: in a decision's tooltip
+	# pass the writes are discarded and this read would log a fetch failure
+	# every frame. See the note on wotsf_add_suffering_effect.
+	if = {
+		limit = { exists = var:wotsf_chevauchee_leader }
+		var:wotsf_chevauchee_leader = {
+			add_character_modifier = {
+				modifier = wotsf_chevauchee_commander_modifier
+				months = 3
+			}
+		}
+	}
+
+	debug_log = "WOTSF: chevauchee start"
+}
+
+# Tears down the county state and arms the 6-month cooldown. The commander and
+# county modifiers were added with a duration, so they expire on their own even
+# if this is never reached.
+wotsf_end_chevauchee_effect = {
+	if = {
+		limit = { has_county_modifier = wotsf_chevauchee_active_modifier }
+		remove_county_modifier = wotsf_chevauchee_active_modifier
+	}
+	remove_variable = wotsf_chevauchee_months
+	remove_variable = wotsf_chevauchee_leader
+
+	# The cooldown outlives the county's place in the registry on purpose, so it
+	# cannot be a variable. See the header of this section.
+	add_county_modifier = {
+		modifier = wotsf_chevauchee_scorched_modifier
+		months = 6
+	}
+	debug_log = "WOTSF: chevauchee end"
+}
+
+# Called once a month from wotsf_county_tick_effect. Two cheap variable reads
+# for a county that has never seen a chevauchee.
+wotsf_chevauchee_tick_effect = {
+	if = {
+		limit = { wotsf_county_chevauchee_active_trigger = yes }
+
+		wotsf_add_suffering_effect = { AMOUNT = wotsf_chevauchee_suffering_value }
+
+		if = {
+			limit = { exists = var:wotsf_chevauchee_leader }
+			save_temporary_scope_value_as = {
+				name = chev_gold
+				value = wotsf_chevauchee_gold_value
+			}
+			var:wotsf_chevauchee_leader = {
+				add_gold = scope:chev_gold
+				add_dread = 0.5
+			}
+		}
+
+		change_variable = { name = wotsf_chevauchee_months subtract = 1 }
+		if = {
+			limit = { var:wotsf_chevauchee_months <= 0 }
+			wotsf_end_chevauchee_effect = yes
+		}
+		else = {
+			debug_log = "WOTSF: chevauchee month"
+		}
+	}
+}
+
+# CHARACTER scope (the perpetrator). The bill of design 3.2, paid on the spot.
+wotsf_chevauchee_costs_effect = {
+	add_character_modifier = {
+		modifier = wotsf_chevauchee_clergy_modifier
+		years = 5
+	}
+
+	if = {
+		limit = { wotsf_faith_condemns_chevauchee_trigger = yes }
+		add_piety = -25
+	}
+
+	every_vassal = {
+		limit = {
+			OR = {
+				has_trait = compassionate
+				has_trait = just
+				has_trait = paranoid
+			}
+		}
+		add_opinion = {
+			modifier = wotsf_dishonour_opinion
+			target = prev
+		}
+	}
+	every_vassal = {
+		limit = {
+			OR = {
+				has_trait = callous
+				has_trait = sadistic
+				has_trait = ambitious
+			}
+		}
+		add_opinion = {
+			modifier = wotsf_ruthless_opinion
+			target = prev
+		}
+	}
+}
+
+# CHARACTER scope (the perpetrator), needs scope:chev_victim (the enemy ruler).
+# Counts escalation two ways: per opponent, for the wotsf.0101 confrontation,
+# and over a rolling five years, for the trait of design 3.3.
+#
+# The per-opponent counter is keyed to the VICTIM and not to scope:war on
+# purpose: the war object is destroyed when the war ends and a stored reference
+# to it would dangle.
+wotsf_register_chevauchee_effect = {
+	if = {
+		limit = {
+			has_variable = wotsf_chev_victim
+			var:wotsf_chev_victim = scope:chev_victim
+		}
+		change_variable = { name = wotsf_chev_count add = 1 }
+	}
+	else = {
+		set_variable = { name = wotsf_chev_victim value = scope:chev_victim }
+		set_variable = { name = wotsf_chev_count value = 1 }
+	}
+
+	# Self-expiring five-year window. Every new chevauchee re-arms it, so this
+	# reads as "six of them without a five-year pause".
+	if = {
+		limit = { has_variable = wotsf_chev_recent }
+		change_variable = { name = wotsf_chev_recent add = 1 }
+	}
+	else = {
+		set_variable = { name = wotsf_chev_recent value = 1 }
+	}
+	if = {
+		limit = { has_variable = wotsf_chev_recent }
+		set_variable = {
+			name = wotsf_chev_recent
+			value = var:wotsf_chev_recent
+			years = 5
+		}
+	}
+
+	if = {
+		limit = {
+			NOT = { has_trait = wotsf_scourge }
+			has_variable = wotsf_chev_recent
+			var:wotsf_chev_recent >= 6
+		}
+		wotsf_grant_scourge_effect = yes
+	}
+	else_if = {
+		limit = { has_trait = wotsf_scourge }
+		wotsf_refresh_scourge_grace_effect = yes
+	}
+}
+
+### The Scourge ##############################################################
+
+# CHARACTER scope. The trait plus the hereditary shame on every living child.
+wotsf_grant_scourge_effect = {
+	add_trait = wotsf_scourge
+	wotsf_refresh_scourge_grace_effect = yes
+	every_child = {
+		limit = { is_alive = yes }
+		wotsf_mark_scourge_child_effect = yes
+	}
+	debug_log = "WOTSF: scourge gained"
+}
+
+wotsf_remove_scourge_effect = {
+	remove_trait = wotsf_scourge
+	remove_variable = wotsf_scourge_grace
+	every_child = {
+		limit = { is_alive = yes }
+		wotsf_unmark_scourge_child_effect = yes
+	}
+	debug_log = "WOTSF: scourge lost"
+}
+
+wotsf_refresh_scourge_grace_effect = {
+	set_variable = {
+		name = wotsf_scourge_grace
+		value = wotsf_scourge_grace_years
+	}
+}
+
+# CHARACTER scope (the child).
+wotsf_mark_scourge_child_effect = {
+	if = {
+		limit = { NOT = { has_character_modifier = wotsf_scourge_child_modifier } }
+		add_character_modifier = wotsf_scourge_child_modifier
+	}
+}
+
+wotsf_unmark_scourge_child_effect = {
+	if = {
+		limit = { has_character_modifier = wotsf_scourge_child_modifier }
+		remove_character_modifier = wotsf_scourge_child_modifier
+	}
+}
+
+##############################################################################
+# PHASE 3 - BROTHERHOODS
+#
+# A brotherhood is a spawned character plus county state. No army, no faction,
+# no title: an outlaw band that took a barony would be a rebellion, which is a
+# different mod. Everything below runs in COUNTY scope unless stated otherwise.
+#
+# The county carries:
+#   wotsf_brotherhood_strength   0-100, the band's reach
+#   wotsf_brotherhood_leader     the spawned character
+#   wotsf_brotherhood_patron     the ruler funding them, absent when unfunded
+#   wotsf_brotherhood_famous     one-shot latch for wotsf.0303
+#   wotsf_brotherhood_robbed_cd  self-expiring 24-month cooldown on wotsf.0302
+#
+# Plus membership of the global list wotsf_brotherhood_counties, which is what
+# the world cap of 8 is measured against.
+#
+# Phase 3 adds NO new loop and NO on_action hook. The band is ticked by the
+# Phase 1 county pulse, and a dead leader is noticed by that same tick, which
+# is why there is no on_death hook here.
+##############################################################################
+
+# Four ways in and one way out. Every exit path calls this, including
+# wotsf_clear_county_effect, because the two county modifiers carry no
+# duration and nothing else will ever remove them.
+wotsf_end_brotherhood_effect = {
+	if = {
+		limit = { has_county_modifier = wotsf_brotherhood_modifier }
+		remove_county_modifier = wotsf_brotherhood_modifier
+	}
+	if = {
+		limit = { has_county_modifier = wotsf_brotherhood_strong_modifier }
+		remove_county_modifier = wotsf_brotherhood_strong_modifier
+	}
+	remove_variable = wotsf_brotherhood_strength
+	remove_variable = wotsf_brotherhood_leader
+	remove_variable = wotsf_brotherhood_patron
+	remove_variable = wotsf_brotherhood_famous
+	remove_variable = wotsf_brotherhood_robbed_cd
+	remove_list_global_variable = { name = wotsf_brotherhood_counties target = this }
+	debug_log = "WOTSF: brotherhood end"
+}
+
+# Exactly one tier modifier at a time, siblings stripped first, and only
+# touched when the tier actually changes. Same contract as the suffering bands.
+wotsf_set_brotherhood_tier_effect = {
+	if = {
+		limit = {
+			has_variable = wotsf_brotherhood_strength
+			var:wotsf_brotherhood_strength >= 60
+			NOT = { has_county_modifier = wotsf_brotherhood_strong_modifier }
+		}
+		if = {
+			limit = { has_county_modifier = wotsf_brotherhood_modifier }
+			remove_county_modifier = wotsf_brotherhood_modifier
+		}
+		add_county_modifier = wotsf_brotherhood_strong_modifier
+		debug_log = "WOTSF: brotherhood tier 2"
+	}
+	else_if = {
+		limit = {
+			has_variable = wotsf_brotherhood_strength
+			var:wotsf_brotherhood_strength < 60
+			NOT = { has_county_modifier = wotsf_brotherhood_modifier }
+		}
+		if = {
+			limit = { has_county_modifier = wotsf_brotherhood_strong_modifier }
+			remove_county_modifier = wotsf_brotherhood_strong_modifier
+		}
+		add_county_modifier = wotsf_brotherhood_modifier
+		debug_log = "WOTSF: brotherhood tier 1"
+	}
+}
+
+# The most expensive thing this mod does, which is why three gates and a 12%
+# roll stand in front of it (wotsf_brotherhood_can_spawn_trigger).
+#
+# The leader is a POOL character: create_character with location = and no
+# employer. The county holds a variable pointing at him, which should be
+# enough to keep the engine from culling him - if it is not, the tick's
+# leader-gone check ends the band cleanly rather than leaking. See R13.
+wotsf_spawn_brotherhood_effect = {
+	set_variable = { name = wotsf_brotherhood_strength value = 20 }
+	add_to_global_variable_list = { name = wotsf_brotherhood_counties target = this }
+
+	# NOT save_temporary_scope_as. A temporary scope dies with the current
+	# effect and would be gone by the time wotsf.0301 fires three days later;
+	# a plain saved scope travels with trigger_event, which is how the event
+	# knows which county it is talking about.
+	save_scope_as = wotsf_band_county
+
+	random_county_province = {
+		save_temporary_scope_as = wotsf_band_province
+	}
+
+	if = {
+		limit = { exists = scope:wotsf_band_province }
+		create_character = {
+			template = wotsf_brotherhood_leader_template
+			location = scope:wotsf_band_province
+			culture = scope:wotsf_band_county.culture
+			faith = scope:wotsf_band_county.faith
+			save_scope_as = wotsf_band_leader
+			after_creation = {
+				add_character_flag = wotsf_brotherhood_leader_flag
+			}
+		}
+		set_variable = {
+			name = wotsf_brotherhood_leader
+			value = scope:wotsf_band_leader
+		}
+	}
+
+	wotsf_set_brotherhood_tier_effect = yes
+
+	if = {
+		limit = { exists = holder }
+		holder = {
+			trigger_event = { id = wotsf.0301 days = 3 }
+		}
+	}
+
+	debug_log = "WOTSF: brotherhood spawn"
+}
+
+# Called once a month from wotsf_county_tick_effect. A county that has never
+# had a brotherhood pays ONE has_variable read, then the spawn gate, which
+# fails on its second line for anything below band 3.
+wotsf_brotherhood_tick_effect = {
+	if = {
+		limit = { wotsf_county_brotherhood_active_trigger = yes }
+
+		if = {
+			limit = { wotsf_brotherhood_leader_gone_trigger = yes }
+			wotsf_end_brotherhood_effect = yes
+		}
+		else_if = {
+			# Nothing left to recruit on. Checked before the band-0 teardown
+			# so a county that heals slowly still loses its outlaws first.
+			limit = {
+				has_variable = wotsf_suffering
+				var:wotsf_suffering < 25
+			}
+			wotsf_end_brotherhood_effect = yes
+		}
+		else = {
+			if = {
+				limit = {
+					has_variable = wotsf_suffering
+					var:wotsf_suffering < 50
+				}
+				change_variable = { name = wotsf_brotherhood_strength subtract = 4 }
+			}
+			else = {
+				change_variable = {
+					name = wotsf_brotherhood_strength
+					add = wotsf_brotherhood_growth
+				}
+			}
+
+			if = {
+				limit = { var:wotsf_brotherhood_strength > 100 }
+				set_variable = { name = wotsf_brotherhood_strength value = 100 }
+			}
+
+			if = {
+				limit = { var:wotsf_brotherhood_strength <= 0 }
+				wotsf_end_brotherhood_effect = yes
+			}
+			else = {
+				wotsf_set_brotherhood_tier_effect = yes
+				wotsf_brotherhood_flavour_effect = yes
+				debug_log = "WOTSF: brotherhood tick"
+			}
+		}
+	}
+	else_if = {
+		limit = { wotsf_brotherhood_can_spawn_trigger = yes }
+		random = {
+			chance = wotsf_brotherhood_spawn_chance
+			wotsf_spawn_brotherhood_effect = yes
+		}
+	}
+}
+
+# At most one of these a month, and 0303 only ever once per band.
+#
+# Both events need to know which county and which man, and neither can be
+# reached from the event's own root - the holder may hold fifty counties. The
+# scopes are saved here, unconditionally and non-temporarily, so they survive
+# the trigger_event delay.
+wotsf_brotherhood_flavour_effect = {
+	save_scope_as = wotsf_band_county
+	if = {
+		limit = { NOT = { wotsf_brotherhood_leader_gone_trigger = yes } }
+		var:wotsf_brotherhood_leader = {
+			save_scope_as = wotsf_band_leader
+		}
+	}
+
+	if = {
+		limit = {
+			var:wotsf_brotherhood_strength >= 70
+			NOT = { has_variable = wotsf_brotherhood_famous }
+			exists = holder
+		}
+		set_variable = { name = wotsf_brotherhood_famous value = yes }
+		holder = {
+			trigger_event = { id = wotsf.0303 days = 2 }
+		}
+	}
+	else_if = {
+		limit = {
+			var:wotsf_brotherhood_strength >= 40
+			NOT = { has_variable = wotsf_brotherhood_robbed_cd }
+			exists = holder
+		}
+		random = {
+			chance = 25
+			set_variable = {
+				name = wotsf_brotherhood_robbed_cd
+				value = yes
+				months = 24
+			}
+			holder = {
+				trigger_event = { id = wotsf.0302 days = 2 }
+			}
+		}
+	}
+}
+
+# Called from the interaction's on_accept at top level. Reads scope:actor
+# (the patron), scope:recipient (the lord being undermined) and scope:target
+# (the county), so it never depends on what root happens to be - an
+# interaction's root is not the actor in every context.
+#
+# The secret is created last and nothing is run off the scope it returns: a
+# secret made in an immediate or an on_accept renders every LATER tooltip in
+# that secret's scope, which is documented engine behaviour, not a bug we can
+# fix. Everything that needs a tooltip happens above it.
+wotsf_fund_brotherhood_effect = {
+	scope:target = {
+		change_variable = { name = wotsf_brotherhood_strength add = 25 }
+		if = {
+			limit = { var:wotsf_brotherhood_strength > 100 }
+			set_variable = { name = wotsf_brotherhood_strength value = 100 }
+		}
+		set_variable = { name = wotsf_brotherhood_patron value = scope:actor }
+		wotsf_set_brotherhood_tier_effect = yes
+	}
+	scope:actor = {
+		add_secret = {
+			type = wotsf_secret_funding_outlaws
+			target = scope:recipient
+		}
+	}
+	debug_log = "WOTSF: brotherhood funded"
+}

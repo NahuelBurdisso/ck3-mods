@@ -1,0 +1,227 @@
+﻿namespace = wotsf
+
+############################################################################
+# wotsf.0001 - THE COUNTY TICK
+#
+# scope = landed_title, hidden, self-chaining every 30 days.
+#
+# 1.19 has no monthly global on_action (the only monthly hooks from code are
+# on_army_monthly, on_faith_monthly and per-playable pulses), so the pulse of
+# design section 11 is per county instead of per map. Vanilla precedent for a
+# title-scoped hidden event: false_conversion.0002/0003, raised from
+# on_county_faith_change (common/on_action/county_on_actions.txt:4-8).
+#
+# The chain IS the registry. It dies when wotsf_clear_county_effect removes
+# wotsf_pulse_active, which happens exactly when suffering reaches 0.
+############################################################################
+
+wotsf.0001 = {
+	hidden = yes
+	scope = landed_title
+
+	trigger = {
+		wotsf_county_pulse_active_trigger = yes
+		wotsf_county_valid_trigger = yes
+	}
+
+	immediate = {
+		wotsf_county_tick_effect = yes
+		if = {
+			limit = { wotsf_county_pulse_active_trigger = yes }
+			trigger_event = { id = wotsf.0001 days = 30 }
+		}
+	}
+}
+
+############################################################################
+# wotsf.0002 - ARMY PRESENCE
+#
+# From on_army_monthly. root = army owner, scope:army = the army
+# (vanilla common/on_action/army_on_actions.txt:3-7).
+#
+# An army scope has NO location link - army_commander, army_owner and
+# involved_combat_side are the only army event targets in 1.19 - but the
+# commanding character stands in the army's province, which is how vanilla
+# bp2_yearly.4030 reads it (bp2_yearly_4.txt:1728-1744). So the commander's
+# location IS the army's province.
+#
+# This one hook both enrolls the county and charges it, which is why no
+# registry scan is needed anywhere: a county nobody has reached yet cannot be
+# suffering, and the moment an army reaches it the hook fires.
+############################################################################
+
+wotsf.0002 = {
+	hidden = yes
+	scope = character
+
+	trigger = {
+		wotsf_system_enabled_trigger = yes
+		is_at_war = yes
+		exists = scope:army
+		scope:army = { exists = army_commander }
+	}
+
+	immediate = {
+		scope:army.army_commander.location.county ?= {
+			if = {
+				limit = { wotsf_county_valid_trigger = yes }
+				if = {
+					limit = {
+						NOT = { has_variable = wotsf_army_claim_hostile }
+						holder ?= { is_at_war_with = root }
+					}
+					set_variable = { name = wotsf_army_claim_hostile value = yes }
+					wotsf_add_suffering_effect = { AMOUNT = 3 }
+					debug_log = "WOTSF: army presence hostile"
+				}
+				else_if = {
+					limit = {
+						NOT = { has_variable = wotsf_army_claim_friendly }
+						holder ?= {
+							OR = {
+								this = root
+								top_liege = root.top_liege
+							}
+						}
+					}
+					set_variable = { name = wotsf_army_claim_friendly value = yes }
+					wotsf_add_suffering_effect = { AMOUNT = 1 }
+					debug_log = "WOTSF: army presence friendly"
+				}
+				else = {
+					debug_log = "WOTSF: army presence neutral"
+				}
+			}
+		}
+	}
+}
+
+############################################################################
+# wotsf.0003 - SIEGE TAKEN        from on_siege_completion
+# wotsf.0004 - COUNTY OCCUPIED    from on_county_occupied
+#
+# root = the occupant, scope:county = the county
+# (vanilla army_on_actions.txt:30-35 and :384-390).
+#
+# Neither adds suffering by itself - the siege charge (+4) and the occupation
+# charge (+2) are monthly and belong to the tick. What these do is ENROL, so a
+# siege that starts and ends between two army pulses still puts the county on
+# the clock.
+############################################################################
+
+wotsf.0003 = {
+	hidden = yes
+	scope = character
+
+	trigger = {
+		wotsf_system_enabled_trigger = yes
+		exists = scope:county
+	}
+
+	immediate = {
+		scope:county = {
+			if = {
+				limit = { wotsf_county_valid_trigger = yes }
+				wotsf_enroll_county_effect = yes
+				debug_log = "WOTSF: siege completed"
+			}
+		}
+	}
+}
+
+wotsf.0004 = {
+	hidden = yes
+	scope = character
+
+	trigger = {
+		wotsf_system_enabled_trigger = yes
+		exists = scope:county
+	}
+
+	immediate = {
+		scope:county = {
+			if = {
+				limit = { wotsf_county_valid_trigger = yes }
+				wotsf_enroll_county_effect = yes
+				debug_log = "WOTSF: county occupied"
+			}
+		}
+	}
+}
+
+############################################################################
+# wotsf.0005 - COUNTY SACKED      from on_raid_action_completion
+#
+# root = the raid army, scope:county = the county that got raided
+# (vanilla army_on_actions.txt:844-848). AGOT redirects the body of this hook
+# into vanilla_on_raid_action_completion but keeps the outer hook firing, so
+# hooking the outer one is correct and touches nothing of AGOT's.
+############################################################################
+
+wotsf.0005 = {
+	hidden = yes
+	scope = army
+
+	trigger = {
+		wotsf_system_enabled_trigger = yes
+		exists = scope:county
+	}
+
+	immediate = {
+		scope:county = {
+			if = {
+				limit = { wotsf_county_valid_trigger = yes }
+				wotsf_add_suffering_effect = { AMOUNT = 15 }
+				debug_log = "WOTSF: county sacked"
+			}
+		}
+	}
+}
+
+############################################################################
+# wotsf.0010 - "EVALUATE THE STATE OF THE PEOPLE"
+#
+# The report of design section 2.5. No custom interface: counts per band,
+# read off the player's own held titles. Bounded by the realm, never the map.
+############################################################################
+
+wotsf.0010 = {
+	type = character_event
+	title = wotsf.0010.t
+	desc = wotsf.0010.desc
+	theme = realm
+
+	left_portrait = {
+		character = root
+		animation = worry
+	}
+
+	immediate = {
+		set_variable = { name = wotsf_report_band1 value = 0 }
+		set_variable = { name = wotsf_report_band2 value = 0 }
+		set_variable = { name = wotsf_report_band3 value = 0 }
+		every_held_title = {
+			limit = {
+				tier = tier_county
+				has_variable = wotsf_band
+			}
+			if = {
+				limit = { var:wotsf_band = 1 }
+				root = { change_variable = { name = wotsf_report_band1 add = 1 } }
+			}
+			else_if = {
+				limit = { var:wotsf_band = 2 }
+				root = { change_variable = { name = wotsf_report_band2 add = 1 } }
+			}
+			else_if = {
+				limit = { var:wotsf_band = 3 }
+				root = { change_variable = { name = wotsf_report_band3 add = 1 } }
+			}
+		}
+		debug_log = "WOTSF: report shown"
+	}
+
+	option = {
+		name = wotsf.0010.a
+	}
+}

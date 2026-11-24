@@ -1,0 +1,208 @@
+﻿l_spanish:
+
+ # AGOT: War of the Small Folk - Español (trato de "vos" arcaico para la nobleza)
+
+ ### Modificadores de condado ################################################
+ wotsf_suffering_1_modifier:0 "Campos inquietos"
+ wotsf_suffering_1_modifier_desc:0 "La guerra pasó por aquí. La cosecha fue más magra de lo que prometieron los septones, y el pueblo llano no aparta los ojos del camino."
+ wotsf_suffering_2_modifier:0 "Tierra doliente"
+ wotsf_suffering_2_modifier_desc:0 "La mitad de las granjas están vacías. Lo que los soldados no se llevaron, lo quemaron, y nadie ha vuelto a levantarlo."
+ wotsf_suffering_3_modifier:0 "Tierra quemada"
+ wotsf_suffering_3_modifier_desc:0 "Nada crece y nadie gobierna. Los vivos comen lo que dejaron los muertos, y los caminos son de quien lleve acero."
+
+ ### Decisiones ##############################################################
+ wotsf_assess_smallfolk_decision:0 "Evaluar el estado del pueblo llano"
+ wotsf_assess_smallfolk_decision_desc:0 "Enviad mayordomos y septones por vuestros condados a contar los campos vacíos, las granjas quemadas y las tumbas.\n\nOs dirán lo que vuestras levas ya saben: que una guerra no termina donde se pliegan los estandartes.\n\n#EMP El sufrimiento sigue a la tierra, no al señor. Un condado tomado por conquista llega con sus heridas intactas.#!"
+ wotsf_assess_cooldown_tt:0 "No habéis enviado mayordomos en el último año"
+ wotsf_assess_effect_tt:0 "Vuestros mayordomos salen y vuelven con un recuento de los condados que poseéis."
+ wotsf_promised_lord_tt:0 "El señor al que prometisteis justicia sigue esperándola"
+ wotsf_capital_suffering_tt:0 "Vuestro condado capital arrastra algo de sufrimiento"
+ wotsf_capital_chevauchee_ready_tt:0 "Vuestro condado capital no está siendo saqueado ya y no está en espera"
+ wotsf_assess_smallfolk_decision_tooltip:0 "Contad las heridas de cada condado que poseéis."
+ wotsf_assess_smallfolk_decision_confirm:0 "Que salgan"
+
+ wotsf_debug_add_suffering_decision:0 "DEBUG: Añadir 30 de sufrimiento (capital)"
+ wotsf_debug_add_suffering_decision_desc:0 "Herramienta de pruebas. Añade 30 puntos de sufrimiento a vuestro condado capital y lo inscribe en el pulso mensual si estaba limpio.\n\nSolo visible con la regla de juego #EMP Pueblo llano: modo depuración#! activada."
+ wotsf_debug_clear_suffering_decision:0 "DEBUG: Limpiar sufrimiento (capital)"
+ wotsf_debug_clear_suffering_decision_desc:0 "Herramienta de pruebas. Elimina todo el sufrimiento, los modificadores de banda y el pulso mensual de vuestro condado capital.\n\nSolo visible con la regla de juego #EMP Pueblo llano: modo depuración#! activada."
+ wotsf_debug_add_effect_tt:0 "#N Añade 30 de sufrimiento a vuestro condado capital, antes de intensidad e invierno.#!"
+ wotsf_debug_clear_effect_tt:0 "#N Elimina el sufrimiento de vuestro condado capital, su modificador de banda y su pulso mensual.#!"
+ wotsf_debug_add_suffering_decision_tooltip:0 "+30 de sufrimiento en vuestro condado capital."
+ wotsf_debug_add_suffering_decision_confirm:0 "Hacedlo"
+ wotsf_debug_clear_suffering_decision_tooltip:0 "Deja limpio vuestro condado capital."
+ wotsf_debug_clear_suffering_decision_confirm:0 "Hacedlo"
+
+ ### Reglas de juego #########################################################
+ game_rule_category_wotsf:0 "La guerra del pueblo llano"
+
+ rule_wotsf_suffering_intensity:0 "Pueblo llano: intensidad del sufrimiento"
+ setting_wotsf_intensity_disabled:0 "Desactivado"
+ setting_wotsf_intensity_disabled_desc:0 "El sistema está apagado. Ningún condado acumula sufrimiento ni recibe modificadores nuevos.\n\nLos condados que ya sufrían conservan sus modificadores hasta que su pulso mensual los limpie."
+ setting_wotsf_intensity_soft:0 "Piadoso"
+ setting_wotsf_intensity_soft_desc:0 "Toda ganancia se reduce a la mitad. La recuperación no cambia.\n\nLa guerra sigue marcando la tierra, pero una década de paz la borra."
+ setting_wotsf_intensity_canon:0 "Canon"
+ setting_wotsf_intensity_canon_desc:0 "El equilibrio previsto. Saquear un condado es lo peor que puede hacérsele; asedios y ocupaciones lo desgastan mes a mes."
+ setting_wotsf_intensity_brutal:0 "Brutal"
+ setting_wotsf_intensity_brutal_desc:0 "Las ganancias aumentan la mitad y la recuperación se reduce a la mitad.\n\nLas Tierras de los Ríos de la Guerra de los Cinco Reyes. Una generación no basta."
+
+ rule_wotsf_debug_mode:0 "Pueblo llano: modo depuración"
+ setting_wotsf_debug_off:0 "Desactivado"
+ setting_wotsf_debug_off_desc:0 "Partida normal."
+ setting_wotsf_debug_on:0 "Activado"
+ setting_wotsf_debug_on_desc:0 "Habilita las dos decisiones de prueba que añaden y limpian sufrimiento en vuestro condado capital.\n\nPara probar el mod, no para jugarlo."
+
+ ### Eventos #################################################################
+ wotsf.0010.t:0 "El estado del pueblo llano"
+ wotsf.0010.desc:0 "Vuestros mayordomos regresan con tablillas de cera y malas noticias, y vuestros septones con otras peores.\n\n#EMP Campos inquietos:#! [ROOT.MakeScope.Var('wotsf_report_band1').GetValue|0] condados.\n#EMP Tierras dolientes:#! [ROOT.MakeScope.Var('wotsf_report_band2').GetValue|0] condados.\n#EMP Tierra quemada:#! [ROOT.MakeScope.Var('wotsf_report_band3').GetValue|0] condados.\n\nNo se cuentan los condados que la guerra nunca tocó, ni los que ya sanaron.\n\n#EMP El sufrimiento pertenece a la tierra. Tomad un condado arruinado por la espada y os lleváis su ruina con él.#!"
+ wotsf.0010.a:0 "El pueblo llano aguanta. Siempre lo ha hecho."
+
+ ############################################################################
+ # FASE 2 - CABALGADA
+ ############################################################################
+
+ ### Modificadores de la cabalgada ###########################################
+ wotsf_chevauchee_active_modifier:0 "Cabalgada"
+ wotsf_chevauchee_active_modifier_desc:0 "Una hueste enemiga recorre este condado sin intención alguna de conservarlo. Queman los molinos, se llevan los rebaños y dejan los pozos emponzoñados a su paso."
+ wotsf_chevauchee_scorched_modifier:0 "Nada que quemar"
+ wotsf_chevauchee_scorched_modifier_desc:0 "Los jinetes ya pasaron por aquí. Lo que podía llevarse no está, lo que no podía llevarse es ceniza, y la gente que trabajaba esta tierra anda por los bosques o yace bajo ella. No hay provecho aquí para otra hueste, no este año."
+ wotsf_chevauchee_commander_modifier:0 "Cargados de botín"
+ wotsf_chevauchee_commander_modifier_desc:0 "Cada carro de grano y cada vaca robada es una cosa más que arrastrar por el camino. La hueste avanza al paso de su saqueo."
+ wotsf_chevauchee_clergy_modifier:0 "Quemador de campos"
+ wotsf_chevauchee_clergy_modifier_desc:0 "Los septones predican contra vos por vuestro nombre. Preguntan, desde el púlpito, cuál de los Siete bendice a un hombre que mata de hambre a los niños para ganar una guerra."
+ wotsf_defended_modifier:0 "Guarnecido contra saqueadores"
+ wotsf_defended_modifier_desc:0 "Hay soldados apostados en las aldeas. No detendrán a una hueste, pero pueden hacer que quemar este condado cueste algo."
+ wotsf_troops_diverted_modifier:0 "Tropas desviadas"
+ wotsf_troops_diverted_modifier_desc:0 "Lanzas que deberían estar en vuestra línea de batalla están en un trigal."
+ wotsf_scourge_child_modifier:0 "Sangre del Azote"
+ wotsf_scourge_child_modifier_desc:0 "El nombre de vuestro padre se pronuncia con una maldición detrás, y la maldición no se detiene en él."
+
+ ### Opinión #################################################################
+ wotsf_dishonour_opinion:0 "Hace la guerra a los campesinos"
+ wotsf_ruthless_opinion:0 "Guerrea sin pestañear"
+ wotsf_mercy_opinion:0 "Tuvo piedad del pueblo llano"
+ wotsf_broken_promise_opinion:0 "Rompió una promesa que me hizo"
+ wotsf_spared_opinion:0 "Me escuchó cuando le costaba algo"
+ wotsf_humiliated_opinion:0 "Me humilló ante la hueste"
+
+ ### Rasgo ###################################################################
+ trait_wotsf_scourge:0 "Azote del pueblo llano"
+ trait_wotsf_scourge_desc:0 "Los campos quemados siguen a este personaje como los cuervos siguen a un ejército. Señores que cabalgarían a su lado en la guerra no se sientan a su mesa en la paz, y los septones han dejado de disimularlo.\n\n#EMP Diez años sin otra cabalgada, o una penitencia pública, harán que el pueblo llano olvide.#!"
+
+ ### Muertes #################################################################
+ wotsf_death_insubordination:0 "fue ahorcado por insubordinación"
+ wotsf_death_insubordination_killer:0 "fue ahorcado por insubordinación por orden de [TARGET_CHARACTER.GetUIName]"
+
+ ### Interacción #############################################################
+ wotsf_chevauchee_interaction:0 "Ordenar una cabalgada"
+ wotsf_chevauchee_interaction_desc:0 "Soltad a vuestra hueste sobre el condado con orden de no tomar nada que no pueda cargarse y quemar todo lo demás. Sin asedios, sin batallas, sin sostener terreno: molinos, graneros, rebaños y granjas, y luego la aldea siguiente.\n\nOs llenará las arcas un poco, romperá el condado durante una generación y os comprará un nombre que no podréis devolver.\n\n#EMP Tres meses. Vuestros septones se enterarán, y vuestros vasallos también.#!"
+ wotsf_forsworn_tt:0 "No habéis jurado no quemar más campos"
+ wotsf_chevauchee_needs_army_tt:0 "Tenéis un ejército en este condado y fuera de combate"
+ wotsf_chevauchee_cooldown_tt:0 "Este condado no ha sido saqueado en los últimos seis meses"
+
+ ### Decisiones ##############################################################
+ wotsf_penance_decision:0 "Hacer penitencia por los campos quemados"
+ wotsf_penance_decision_desc:0 "Caminad hasta el septo sin espada. Confesad las aldeas por su nombre, si aún las recordáis, y pagad la reconstrucción de vuestras propias arcas.\n\nEl pueblo llano no os amará por ello. Solo dejará de enseñar a sus hijos a escupir cuando os nombren.\n\n#EMP Elimina el rasgo Azote del pueblo llano.#!"
+ wotsf_compensate_lord_decision:0 "Cumplir vuestra palabra al señor quemado"
+ wotsf_compensate_lord_decision_desc:0 "Prometisteis justicia cuando terminara la guerra. La guerra ha terminado, o casi, y el hombre sigue esperando.\n\nEl oro no devolverá a su pueblo llano a la tierra de la que salió, pero es lo que tenéis.\n\n#EMP Paga la deuda antes de que se convierta en un agravio que todo el reino recuerde.#!"
+ wotsf_debug_force_chevauchee_decision:0 "DEBUG: Cabalgada sobre vuestra capital"
+ wotsf_debug_force_chevauchee_decision_desc:0 "Herramienta de pruebas. Inicia una cabalgada de tres meses sobre vuestro propio condado capital, sin guerra ni ejército, para observar de una vez el pulso mensual, el botín, el temor y el vencimiento.\n\nSolo visible con la regla de juego #EMP Pueblo llano: modo depuración#! activada."
+ wotsf_penance_decision_tooltip:0 "Recomprad vuestro nombre en el septo."
+ wotsf_penance_decision_confirm:0 "Caminaré descalzo"
+ wotsf_compensate_lord_decision_tooltip:0 "Pagad lo que jurasteis pagar."
+ wotsf_compensate_lord_decision_confirm:0 "Mi palabra se cumple"
+ wotsf_debug_chevauchee_effect_tt:0 "#N Inicia una cabalgada de tres meses sobre vuestro condado capital, con vos al mando.#!"
+ wotsf_debug_force_chevauchee_decision_tooltip:0 "Quema vuestro propio condado capital durante tres meses."
+ wotsf_debug_force_chevauchee_decision_confirm:0 "Hacedlo"
+
+ ### Reglas de juego #########################################################
+ rule_wotsf_ai_chevauchee:0 "Pueblo llano: la IA y la cabalgada"
+ setting_wotsf_ai_chev_never:0 "Nunca"
+ setting_wotsf_ai_chev_never_desc:0 "La IA nunca quema campos. La herramienta queda solo en vuestras manos."
+ setting_wotsf_ai_chev_cruel:0 "Solo los crueles"
+ setting_wotsf_ai_chev_cruel_desc:0 "Solo los gobernantes despiadados, sádicos, ambiciosos o vengativos ordenarán una cabalgada, y jamás uno compasivo o justo.\n\nEl equilibrio previsto: rara, y siempre un personaje diciéndoos quién es."
+ setting_wotsf_ai_chev_aggressive:0 "Sin freno"
+ setting_wotsf_ai_chev_aggressive_desc:0 "Cualquier gobernante que no sea compasivo ni justo lo considerará, y lo considerará a menudo.\n\nUn continente de campos ardiendo. Elegid esto para las Tierras de los Ríos, no para una partida larga."
+
+ ### Eventos #################################################################
+ wotsf.0101.t:0 "El caballero que dijo basta"
+ wotsf.0101.desc:0 "[wotsf_knight.GetUIName] no espera a que lo anuncien. Hay hollín en su sobreveste y algo peor en sus botas.\n\n—Tres veces ya —dice—. Tres aldeas. He matado hombres a vuestro servicio y he dormido bien después, porque eran hombres y estaban armados. Esta mañana saqué a una niña de un granero y no era ninguna de las dos cosas.\n\nLa hueste escucha. Ese es todo el problema: la hueste escucha.\n\n—Dad la orden de parar, mi señor. O buscad a otro que lleve vuestro estandarte."
+ wotsf.0101.a:0 "Basta. Se da la orden: no se quema nada más."
+ wotsf.0101.a.compassionate:0 "Tenéis razón, y lo sé desde hace tres aldeas."
+ wotsf.0101.b:0 "Repetid eso donde pueda oírlo la hueste entera."
+ wotsf.0101.b.arrogant:0 "Os confundís con un hombre cuya opinión haya pedido."
+ wotsf.0101.c:0 "Ahorcadlo. Donde la hueste pueda verlo."
+ wotsf.0101.c.sadistic:0 "Ahorcadlo despacio. Una lección desperdiciada es una lección doble."
+
+ wotsf.0201.t:0 "Mi señor, los campos arden"
+ wotsf.0201.desc:0 "[wotsf_pleading_lord.GetUIName] ha cabalgado toda la noche para llegar hasta vos, y no se sienta.\n\n—No están asediando [chev_county.GetName], mi señor. No pretenden tomarlo. Entran, prenden fuego a los graneros, matan a todo lo que corre y salen antes de que podamos formar.\n\nDeja algo sobre la mesa. Es un puñado de grano quemado.\n\n—Esto es lo que comerá mi pueblo llano este invierno. Esto, y unos a otros."
+ wotsf.0201.a:0 "Apostad hombres en las aldeas. El condado aguantará."
+ wotsf.0201.b:0 "Tendréis justicia cuando ganemos la guerra. Os doy mi palabra."
+ wotsf.0201.c:0 "La guerra se decide en el campo, no en vuestros graneros."
+ wotsf.0201.c.callous:0 "Entonces aprenderán lo que valen. Marchaos."
+
+ ### FASE 3 - HERMANDADES ####################################################
+
+ wotsf_brotherhood_modifier:0 "Una hermandad en el bosque"
+ wotsf_brotherhood_modifier_desc:0 "Hombres que lo perdieron todo se han encontrado, y uno de ellos sabe dar órdenes. Toman de los caminos y devuelven una parte a las aldeas, y por eso nadie dirá dónde duermen."
+ wotsf_brotherhood_strong_modifier:0 "La hermandad domina los caminos"
+ wotsf_brotherhood_strong_modifier_desc:0 "Ya no se esconden. Vuestros recaudadores viajan con escolta o no viajan, y el pueblo llano ha empezado a usar el nombre de su cabecilla como antes usaba el vuestro."
+ wotsf_relief_modifier:0 "Los graneros del señor están abiertos"
+ wotsf_relief_modifier_desc:0 "El grano subió desde las tierras bajas a vuestra costa. Saben que fue comprado y no regalado, y comen igual."
+
+ wotsf_patron_exposed_opinion:0 "Pagó a forajidos para quemar mis tierras"
+ wotsf_weakness_opinion:0 "Pactó con bandidos"
+
+ wotsf_death_outlaw:0 "fue ahorcado como forajido"
+ wotsf_death_outlaw_killer:0 "fue cazado y ahorcado por orden de [TARGET_CHARACTER.GetUIName]"
+
+ wotsf_secret_funding_outlaws:0 "Padrino de forajidos"
+ wotsf_secret_funding_outlaws_desc:0 "Paga a los bandidos que queman las tierras de [TARGET_CHARACTER.GetShortUIName], y jamás se le ha visto hacerlo."
+
+ wotsf_fund_brotherhood_interaction:0 "Financiar a la hermandad"
+ wotsf_fund_brotherhood_interaction_desc:0 "En algún lugar de ese condado hay hombres sin nada que ya han aprendido a tomar lo que necesitan. No hace falta decirles qué hacer. Hacen falta botas, puntas de flecha y una razón para creer que alguien con sello está de su lado.\n\nLa bolsa pasa por tres manos, y ninguna recordará la vuestra.\n\n#EMP Nadie es avisado. Eso es lo que lo hace valer la pena, y es un secreto, lo que significa que es algo que puede salir a la luz.#!"
+ wotsf_fund_needs_brotherhood_tt:0 "Hay una hermandad suelta en este condado"
+ wotsf_fund_already_tt:0 "Nadie más les está pagando ya"
+
+ wotsf_hunt_brotherhood_decision:0 "Dar caza a la hermandad"
+ wotsf_hunt_brotherhood_decision_desc:0 "Enviad hombres a las colinas tras ellos. Jinetes, perros y una bolsa para quien hable.\n\nEl problema es que el condado está de su parte y el condado conoce el terreno. Cada campesino que interroguéis lleva un año con hambre y recuerda quién le dio de comer.\n\n#EMP Actúa sobre el condado vuestro que peor esté. Es una tirada, no una certeza: vuestra pericia marcial y un ejército ya apostado allí ayudan, y una hermandad grande es mucho más difícil de acorralar. Fallar los hace más fuertes.#!"
+ wotsf_hunt_cooldown_tt:0 "No habéis enviado hombres a las colinas en el último año"
+ wotsf_hunt_effect_tt:0 "Vuestros jinetes salen tras la hermandad del condado vuestro que peor esté."
+ wotsf_relieve_county_decision:0 "Abrir los graneros"
+ wotsf_relieve_county_decision_desc:0 "Comprad grano allí donde aún crezca y hacedlo carretear hasta el condado que más lo necesite. No es caridad: los que lo acarrean cobran, y los que lo coman recordarán quién lo pagó.\n\n#EMP Actúa sobre el condado vuestro que peor esté. El sufrimiento baja directamente y, a diferencia de todo lo demás en este mod, la cantidad no la tocan ni la regla de intensidad ni el invierno: el oro compra grano al mismo precio en toda estación.#!"
+ wotsf_relief_cooldown_tt:0 "No habéis abierto los graneros en el último año"
+ wotsf_relief_effect_tt:0 "El grano llega al condado vuestro que peor esté, y la tierra empieza a recuperarse."
+ wotsf_treat_with_brotherhood_decision:0 "Parlamentar con la hermandad"
+ wotsf_treat_with_brotherhood_decision_desc:0 "Enviad a alguien desarmado al lindero del bosque con una oferta. Nadie es ahorcado. Los robos cesan. Lo ya tomado sigue tomado.\n\nFunciona, y esa es la parte incómoda. Un señor que puede acabar con un alzamiento hablando les ha dicho algo sobre sí mismo a sus vasallos, y a algunos no les gustará.\n\n#EMP Acaba de golpe con la hermandad del condado vuestro que peor esté y se lleva algo de sufrimiento con ella. Su cabecilla puede entrar a vuestro servicio. Vuestros vasallos orgullosos, ambiciosos y valientes os tendrán en menos.#!"
+ wotsf_treat_effect_tt:0 "La hermandad se dispersa, y el condado respira."
+ wotsf_debug_spawn_brotherhood_decision:0 "DEBUG: Alzar una hermandad"
+ wotsf_debug_spawn_brotherhood_decision_desc:0 "Solo para pruebas. Inscribe vuestro condado capital si está limpio y alza allí una hermandad de inmediato, saltándose el requisito de Tierra arrasada y la tirada mensual. El tope mundial de ocho se sigue respetando."
+ wotsf_debug_spawn_ready_tt:0 "Vuestro condado capital no tiene hermandad y el mundo está bajo el tope"
+ wotsf_debug_spawn_effect_tt:0 "Se alza una hermandad en vuestro condado capital."
+
+ rule_wotsf_brotherhoods:0 "Pueblo llano: hermandades"
+ setting_wotsf_brotherhoods_off:0 "Ninguna"
+ setting_wotsf_brotherhoods_off_desc:0 "Ningún condado alza jamás forajidos. El sufrimiento sigue siendo un número sobre la tierra y de ahí no sale nada.\n\nLas bandas ya existentes en una partida en curso siguen su vida con normalidad, así que se puede activar a mitad de partida sin peligro."
+ setting_wotsf_brotherhoods_normal:0 "Como está escrito"
+ setting_wotsf_brotherhoods_normal_desc:0 "Un condado dejado en Tierra arrasada alzará una hermandad en cosa de medio año. Puede haber ocho en el mundo a la vez.\n\nLo bastante lento como para que sanar el condado sea una alternativa real a darles caza."
+ setting_wotsf_brotherhoods_frequent:0 "Las Tierras de los Ríos"
+ setting_wotsf_brotherhoods_frequent_desc:0 "Los forajidos se alzan dos veces y media más fácilmente. El tope mundial de ocho se mantiene, así que esto decide sobre todo con qué rapidez se alcanza.\n\nElegid esto para un continente en guerra, o para probar."
+
+ wotsf.0301.t:0 "Estandartes en el bosque"
+ wotsf.0301.desc:0 "Lo primero que oye vuestro mayordomo es una carreta de impuestos que llega vacía, con el carretero vivo, ileso y muy cuidadoso con lo que dice.\n\n—Se llevaron el grano y dejaron los caballos, mi señor. Dijeron que los caballos eran del condado.\n\nEn [wotsf_band_county.GetName] la guerra no ha terminado para nadie. Hombres que perdieron una alquería, una esposa o un brazo por la hueste de alguien se han encontrado entre los árboles, y uno de ellos, [wotsf_band_leader.GetUIName], resulta capaz de hacer que los demás se queden quietos y escuchen.\n\nNo tienen estandarte. Esa es justamente la cuestión."
+ wotsf.0301.a:0 "Toda guerra deja hombres en el bosque. Esto pasará."
+ wotsf.0301.b:0 "Entonces que el condado pase hambre hasta que los entregue."
+ wotsf.0302.t:0 "La carreta de los impuestos"
+ wotsf.0302.desc:0 "La tomaron en el camino que sale de [wotsf_band_county.GetName], entre el vado y el molino, y habían desaparecido antes de que la escolta terminara de caerse de los caballos.\n\nVuestro sargento está furioso y sin un rasguño, lo que os dice casi todo lo que pasó. No mataron a nadie. Nunca matan a nadie. Así mantienen quietas las aldeas: una hermandad que asesina hombres del condado deja de ser del condado.\n\nEl dinero se ha ido igualmente."
+ wotsf.0302.a:0 "Contad lo que queda y callad. Un señor robado es un señor que perdió."
+ wotsf.0303.t:0 "Ahora tienen un nombre"
+ wotsf.0303.desc:0 "Un cantor en vuestra propia mesa lleva tres estrofas antes de caer en la cuenta de en qué salón está.\n\nLa canción trata de [wotsf_band_leader.GetUIName]. En ella [wotsf_band_leader.GetHerHe] devuelve a una viuda su buey de arado y ahorca a un recaudador, en ese orden, y el gentío de la canción vitorea.\n\nAquí es donde deja de ser una molestia. Los caminos que salen de [wotsf_band_county.GetName] son suyos después del anochecer, vuestra ley llega hasta el lindero del bosque y no más allá, y muchachos de tres condados de distancia caminan hacia el bosque para buscarlos.\n\nEl cantor se ha puesto muy pálido."
+ wotsf.0303.a:0 "Una canción no es una rebelión. Todavía no."
+ wotsf.0303.b:0 "Ahorcad al cantor. La canción morirá con él."
+ wotsf.0304.t:0 "Tres manos no bastaron"
+ wotsf.0304.desc:0 "La bolsa salió por un mercader, y el mercader usó a un factor, y el factor habló con alguien que lo puso por escrito.\n\nAhora está por escrito, de una letra que no reconocéis, sobre una mesa delante de [secret_target.GetUIName], con vuestro propio sello al pie. No hay versión de esto que sea un malentendido.\n\nPagasteis a bandidos para quemar los campos de otro señor. La mitad de los señores del reino han querido hacerlo. Todos ellos saben que la única diferencia entre ellos y vos es que no lo hicieron."
+ wotsf.0304.a:0 "Que me lo digan a la cara, entonces."
+ wotsf.0304.b:0 "No hay nada que pueda decir que haga esto más pequeño."
+ wotsf.0401.t:0 "La cacería"
+ wotsf.0401.desc.win:0 "Los cogieron en una alquería antes del alba, lo que significa que alguien habló: por la bolsa, por un rencor, o porque su propio hermano estaba en la banda y lo quería vivo.\n\nNo fue una batalla. Duró lo que una orden gritada.\n\nAl cabecilla lo ahorcaron donde se ve desde el camino que sale del condado, y dejaron el cuerpo colgado. La mitad de los que vienen a mirar están aliviados. La otra mitad está contando, y no hay modo de saber quién es quién."
+ wotsf.0401.desc.fail:0 "Vuestros jinetes estuvieron once días en las colinas y encontraron cuatro hogueras frías, una cueva con paja fresca y a nadie en absoluto.\n\nCada campesino al que interrogaron llevaba un año con hambre y tenía cara de madera. Uno le ofreció pan a vuestro sargento. Vuestro sargento lo aceptó.\n\nLa bolsa está gastada, el condado ha visto a su señor fracasar en encontrar a hombres que viven en él, y esta noche serán más de los que eran esta mañana."
+ wotsf.0401.a:0 "Así son las cosas."
