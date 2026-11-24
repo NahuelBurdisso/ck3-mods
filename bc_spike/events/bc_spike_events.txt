@@ -1,0 +1,48 @@
+﻿namespace = bc_spike
+
+# Probe 10: can a phase event hand off to a real pop-up with choices?
+# This is the "rare choice event" path in the Chronicles design — the thing
+# that makes a battle interactive rather than narrated at you.
+bc_spike.0001 = {
+	type = character_event
+	title = bc_spike.0001.t
+	desc = bc_spike.0001.desc
+	theme = martial
+
+	trigger = {
+		is_ai = no
+	}
+
+	immediate = {
+		debug_log = "BC_SPIKE: P10 pop-up event fired"
+	}
+
+	option = {
+		name = bc_spike.0001.a
+		debug_log = "BC_SPIKE: P10 option A taken"
+	}
+
+	option = {
+		name = bc_spike.0001.b
+		debug_log = "BC_SPIKE: P10 option B taken"
+	}
+}
+
+# Probe 12: cleanup at battle end. Reached from on_combat_end_winner/_loser via
+# their `events = { }` list — see the comment in bc_spike_on_actions.txt for why
+# an `effect = { }` block there is silently discarded.
+# Shape copied from vanilla combat_event.0001: hidden, scoped to the combat side.
+bc_spike.0002 = {
+	hidden = yes
+	scope = combat_side
+
+	immediate = {
+		debug_log = "BC_SPIKE: P12 combat end hook fired"
+		side_commander ?= {
+			bc_spike_cleanup_effect = yes
+		}
+		every_side_knight = {
+			bc_spike_cleanup_effect = yes
+		}
+	}
+}

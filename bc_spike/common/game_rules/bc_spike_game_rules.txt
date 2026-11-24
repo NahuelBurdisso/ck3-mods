@@ -1,0 +1,11 @@
+﻿# Probe 8: is a modded game rule selectable in the setup screen and readable in
+# script via has_game_rule? Chronicles needs this for frequency + swing tuning.
+bc_spike_frequency = {
+	categories = { flavor }
+
+	default = bc_spike_frequency_default
+
+	bc_spike_frequency_low = {}
+	bc_spike_frequency_default = {}
+	bc_spike_frequency_high = {}
+}

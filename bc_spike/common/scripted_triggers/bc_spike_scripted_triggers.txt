@@ -1,0 +1,13 @@
+﻿# BC Spike - scripted triggers
+# Prefix every key with `bc_spike_` so it can never collide with vanilla or another mod.
+
+# Probe 5: can a phase event gate on the tactical situation?
+# This is the whole of "Tides" — if these cannot be read, the situational
+# layer collapses to nothing.
+bc_spike_is_losing_trigger = {
+	scope:combat_side.side_strength < scope:combat_side.enemy_side.side_strength
+}
+
+bc_spike_is_winning_trigger = {
+	scope:combat_side.side_strength > scope:combat_side.enemy_side.side_strength
+}

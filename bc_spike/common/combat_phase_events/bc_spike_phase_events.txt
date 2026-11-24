@@ -1,0 +1,187 @@
+﻿# BC Spike - probe suite.
+#
+# Every restart costs ~6 minutes of load, so one battle must answer every
+# open question in the Battle Chronicles design at once. Each probe writes a
+# `BC_SPIKE: Pn ...` line to stdout, so results are read from the run log
+# rather than from screenshots.
+#
+# P1  mod loads at all
+# P2  commander phase event fires from a new additive file
+# P3  knight phase event fires from a new additive file
+# P4  terrain readable via scope:combat_side.combat.location
+# P5  side strength comparison usable as a gate
+# P6  modded advantage modifier renders in the battle breakdown (visual)
+# P7  parameterised scripted effect works
+# P8  modded game rule readable via has_game_rule
+# P9  toast with modded loc renders (visual)
+# P10 pop-up event fires for the player from a phase event
+# P11 add_opinion works from a knight event
+# P13 has_character_modifier gates re-firing
+# P14 knights on a side are enumerable (shieldbrother hook)
+
+# ---------------------------------------------------------------------------
+# Commander probe. Fires once per commander, then P13 locks it out.
+# ---------------------------------------------------------------------------
+bc_spike_commander_probe = {
+	type = commander
+
+	is_valid = {
+		exists = root
+		is_ai = no
+		# P13
+		NOT = { has_character_modifier = bc_spike_momentum_major }
+	}
+
+	chance = {
+		base = 100000
+	}
+
+	effect = {
+		save_scope_as = bc_commander
+
+		debug_log = "BC_SPIKE: P1 mod loaded"
+		debug_log = "BC_SPIKE: P2 commander phase event fired"
+
+		# P4 - terrain
+		if = {
+			limit = { exists = scope:combat_side.combat.location }
+			debug_log = "BC_SPIKE: P4 combat location reachable"
+			if = {
+				limit = { scope:combat_side.combat.location = { terrain = forest } }
+				debug_log = "BC_SPIKE: P4 terrain = forest"
+			}
+			else_if = {
+				limit = { scope:combat_side.combat.location = { terrain = hills } }
+				debug_log = "BC_SPIKE: P4 terrain = hills"
+			}
+			else_if = {
+				limit = { scope:combat_side.combat.location = { terrain = mountains } }
+				debug_log = "BC_SPIKE: P4 terrain = mountains"
+			}
+			else_if = {
+				limit = { scope:combat_side.combat.location = { terrain = plains } }
+				debug_log = "BC_SPIKE: P4 terrain = plains"
+			}
+			else = {
+				debug_log = "BC_SPIKE: P4 terrain = other but readable"
+			}
+		}
+		else = {
+			debug_log = "BC_SPIKE: P4 FAILED combat location NOT reachable"
+		}
+
+		# P5 - situational gating
+		if = {
+			limit = { bc_spike_is_losing_trigger = yes }
+			debug_log = "BC_SPIKE: P5 strength gate readable, side is LOSING"
+		}
+		else_if = {
+			limit = { bc_spike_is_winning_trigger = yes }
+			debug_log = "BC_SPIKE: P5 strength gate readable, side is WINNING"
+		}
+		else = {
+			debug_log = "BC_SPIKE: P5 strength gate readable, sides EVEN"
+		}
+
+		# P8 - game rule
+		if = {
+			limit = { has_game_rule = bc_spike_frequency_default }
+			debug_log = "BC_SPIKE: P8 game rule readable = default"
+		}
+		else_if = {
+			limit = { has_game_rule = bc_spike_frequency_low }
+			debug_log = "BC_SPIKE: P8 game rule readable = low"
+		}
+		else_if = {
+			limit = { has_game_rule = bc_spike_frequency_high }
+			debug_log = "BC_SPIKE: P8 game rule readable = high"
+		}
+		else = {
+			debug_log = "BC_SPIKE: P8 FAILED game rule not readable"
+		}
+
+		# P14 - knights enumerable
+		scope:combat_side = {
+			every_side_knight = {
+				debug_log = "BC_SPIKE: P14 knight enumerated"
+			}
+		}
+
+		# P6 + P7 + P9
+		send_interface_toast = {
+			type = event_toast_effect_good
+			title = bc_spike_toast_title
+			left_icon = scope:bc_commander
+
+			bc_spike_apply_momentum_effect = {
+				MODIFIER = bc_spike_momentum_major
+				DAYS = 30
+			}
+		}
+
+		# P10 - pop-up path
+		trigger_event = bc_spike.0001
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Second commander probe, gated on the situation. Only reachable once the
+# first one has locked itself out, which also proves P13 worked.
+# ---------------------------------------------------------------------------
+bc_spike_commander_gated = {
+	type = commander
+
+	is_valid = {
+		exists = root
+		is_ai = no
+		has_character_modifier = bc_spike_momentum_major
+		bc_spike_is_winning_trigger = yes
+	}
+
+	chance = {
+		base = 100000
+	}
+
+	effect = {
+		debug_log = "BC_SPIKE: P13 lockout worked, gated event fired while winning"
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Knight probe.
+# ---------------------------------------------------------------------------
+bc_spike_knight_probe = {
+	type = knight
+
+	is_valid = {
+		exists = root
+		NOT = { has_character_modifier = bc_spike_faltering_major }
+	}
+
+	chance = {
+		base = 100000
+	}
+
+	effect = {
+		debug_log = "BC_SPIKE: P3 knight phase event fired"
+
+		bc_spike_apply_momentum_effect = {
+			MODIFIER = bc_spike_faltering_major
+			DAYS = 30
+		}
+
+		# P11 - opinion, which no vanilla or AGOT phase event uses
+		if = {
+			limit = { exists = liege }
+			add_opinion = {
+				target = liege
+				modifier = bc_spike_opinion_modifier
+				opinion = 10
+			}
+			debug_log = "BC_SPIKE: P11 add_opinion succeeded"
+		}
+		else = {
+			debug_log = "BC_SPIKE: P11 skipped, knight has no liege"
+		}
+	}
+}

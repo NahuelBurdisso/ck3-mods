@@ -1,0 +1,20 @@
+﻿# Probe 6: do these render in the combat advantage breakdown under their
+# localized names? The vanilla control proved the mechanic; this proves that a
+# *modded* modifier reads correctly in that list.
+# Values are exaggerated so they cannot be mistaken for noise.
+bc_spike_momentum_major = {
+	icon = martial_positive
+	advantage = 20
+}
+
+bc_spike_faltering_major = {
+	icon = martial_negative
+	advantage = -20
+}
+
+# Kept for the console fast-path in the spec:
+#   effect add_character_modifier = { modifier = bc_spike_advantage_modifier days = 30 }
+bc_spike_advantage_modifier = {
+	icon = martial_positive
+	advantage = 50
+}
