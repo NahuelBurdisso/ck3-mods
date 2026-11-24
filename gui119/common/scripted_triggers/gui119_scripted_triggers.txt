@@ -1,0 +1,2 @@
+﻿# GUI 1.19 Patch - scripted triggers
+# Prefix every key with `gui119_` so it can never collide with vanilla or another mod.
